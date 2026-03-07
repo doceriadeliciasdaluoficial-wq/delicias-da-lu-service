@@ -2,13 +2,13 @@ package main
 
 import (
 	"delicias-da-lu-service/internal/controller"
-	"delicias-da-lu-service/internal/controller/teste"
+	"delicias-da-lu-service/internal/controller/system"
 )
 
 func main() {
 	server := controller.NewAPIServer()
 
-	testeHandler := teste.NewHandler()
+	testeHandler := system.NewHandler()
 
 	server.AddRoutes(testeHandler)
 

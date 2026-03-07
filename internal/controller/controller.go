@@ -1,7 +1,7 @@
 package controller
 
 import (
-	"delicias-da-lu-service/internal/controller/teste"
+	"delicias-da-lu-service/internal/controller/system"
 
 	"github.com/labstack/echo/v5"
 	"github.com/rs/zerolog/log"
@@ -11,7 +11,7 @@ const PORT = ":8080"
 
 type APIServer interface {
 	Start() error
-	AddRoutes(testeHandler teste.Handler) error
+	AddRoutes(testeHandler system.Handler) error
 }
 
 type apiServerImpl struct {
@@ -32,11 +32,11 @@ func (ref apiServerImpl) Start() error {
 	return nil
 }
 
-func (ref apiServerImpl) AddRoutes(testeHandler teste.Handler) error {
+func (ref apiServerImpl) AddRoutes(testeHandler system.Handler) error {
 
 	group := ref.server.Group("/v1")
 
-	group.POST("", testeHandler.Create)
+	group.GET("", testeHandler.Get)
 
 	return nil
 }
