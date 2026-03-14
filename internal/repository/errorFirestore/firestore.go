@@ -2,14 +2,16 @@ package errorFirestore
 
 import (
 	"context"
-	"encoding/json"
+	"net/http"
 
 	"cloud.google.com/go/firestore"
+	"delicias-da-lu-service.com/mod/internal/entity/issue"
+	"delicias-da-lu-service.com/mod/internal/platform/problemdetails"
 )
 
 type ErrorRepository interface {
-	GetTypeOfErrorByIdentifier(ctx context.Context, identifier string) (string, error)
-	GetInstanceOfErrorByIdentifier(ctx context.Context, identifier string) (string, error)
+	GetTypeOfErrorByIdentifier(ctx context.Context, identifier string) (issue.ErrorType, error)
+	GetInstanceOfErrorByIdentifier(ctx context.Context, identifier string) (issue.ErrorInstance, error)
 }
 
 type errorRepositoryImple struct {
@@ -22,47 +24,38 @@ func NewErrorRepository(client *firestore.Client) ErrorRepository {
 	}
 }
 
-func (ref errorRepositoryImple) GetTypeOfErrorByIdentifier(ctx context.Context, identifier string) (string, error) {
-	doc, err := ref.client.Collection("type").Doc(identifier).Get(ctx)
+func (ref errorRepositoryImple) GetTypeOfErrorByIdentifier(ctx context.Context, identifier string) (issue.ErrorType, error) {
+	doc, err := ref.client.Collection("types").Doc(identifier).Get(ctx)
 	if err != nil {
-		return "", err
+		return issue.ErrorType{}, err
 	}
 
-	type errorTypeDAO struct {
-		html string `firestore:"html"`
-	}
-
-	var errorType errorTypeDAO
+	var errorType issue.ErrorType
 	if err := doc.DataTo(&errorType); err != nil {
-		return "", err
+		return issue.ErrorType{}, err
 	}
-	return errorType.html, nil
+
+	if errorType.Html == "" {
+		return issue.ErrorType{}, problemdetails.NewErrorWithStackTrace(problemdetails.Error{
+			Title:      "Error Type Not Found",
+			Detail:     "No error type found for the provided identifier",
+			HTTPStatus: http.StatusNotFound,
+			Instance:   "localhost:8080/v1/error/type/",
+			Severity:   problemdetails.Err,
+		})
+	}
+	return errorType, nil
 }
-func (ref errorRepositoryImple) GetInstanceOfErrorByIdentifier(ctx context.Context, identifier string) (string, error) {
-	doc, err := ref.client.Collection("instance").Doc(identifier).Get(ctx)
+func (ref errorRepositoryImple) GetInstanceOfErrorByIdentifier(ctx context.Context, identifier string) (issue.ErrorInstance, error) {
+	doc, err := ref.client.Collection("instances").Doc(identifier).Get(ctx)
 	if err != nil {
-		return "", err
+		return issue.ErrorInstance{}, err
 	}
 
-	type errorInstanceDAO struct {
-		RequestBody string `firestore:"request_body"`
-		RequestDate string `firestore:"request_date"`
-		Status      int    `firestore:"status"`
-		Title       string `firestore:"title"`
-		TraceID     string `firestore:"trace_id"`
-		Type        string `firestore:"type"`
-		UserAgent   string `firestore:"user_agent"`
-	}
-
-	var errorInstance errorInstanceDAO
+	var errorInstance issue.ErrorInstance
 	if err := doc.DataTo(&errorInstance); err != nil {
-		return "", err
+		return issue.ErrorInstance{}, err
 	}
 
-	jsonData, err := json.Marshal(errorInstance)
-	if err != nil {
-		return "", err
-	}
-
-	return string(jsonData), nil
+	return errorInstance, nil
 }

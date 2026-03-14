@@ -6,6 +6,7 @@ import (
 	"delicias-da-lu-service.com/mod/internal/controller"
 	"delicias-da-lu-service.com/mod/internal/controller/system"
 	"delicias-da-lu-service.com/mod/internal/repository/errorFirestore"
+	"delicias-da-lu-service.com/mod/internal/usecase/errorList"
 
 	"cloud.google.com/go/firestore"
 	"github.com/rs/zerolog/log"
@@ -23,8 +24,8 @@ func main() {
 	server := controller.NewAPIServer()
 
 	errorRepository := errorFirestore.NewErrorRepository(client)
-
-	testeHandler := system.NewHandler(errorRepository)
+	errorUsecase := errorList.NewErrorListUseCase(errorRepository)
+	testeHandler := system.NewHandler(errorUsecase)
 
 	server.AddRoutes(testeHandler)
 

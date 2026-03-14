@@ -71,7 +71,7 @@ func ErrorHandler(e *echo.Context, err error) {
 	if !errors.As(err, &problemdetailsError) {
 		log.Error().Err(err).Msg("error response handled")
 		e.JSON(http.StatusInternalServerError, Error{
-			Type:       "",
+			Type:       "unexpectedUnhandledError",
 			Title:      "UnexpectedError",
 			Detail:     "An untreatable an unrecognized error was found, please contact support. Specific error can be found on '#/internal'",
 			HTTPStatus: http.StatusInternalServerError,
@@ -83,7 +83,7 @@ func ErrorHandler(e *echo.Context, err error) {
 				},
 			},
 
-			Instance: "",
+			Instance: "localhost:8080/v1/error/unexpectedUnhandledError/",
 
 			Err: err,
 		})

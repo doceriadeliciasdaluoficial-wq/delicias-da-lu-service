@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"delicias-da-lu-service.com/mod/internal/platform/problemdetails"
-	"delicias-da-lu-service.com/mod/internal/repository/errorFirestore"
+	"delicias-da-lu-service.com/mod/internal/usecase/errorList"
 
 	"github.com/labstack/echo/v5"
 	"github.com/rs/zerolog/log"
@@ -16,12 +16,12 @@ type Handler interface {
 }
 
 type handlerImpl struct {
-	errorRepository errorFirestore.ErrorRepository
+	errorUsecase errorList.ErrorListUseCase
 }
 
-func NewHandler(repository errorFirestore.ErrorRepository) Handler {
+func NewHandler(usecase errorList.ErrorListUseCase) Handler {
 	return handlerImpl{
-		errorRepository: repository,
+		errorUsecase: usecase,
 	}
 }
 
@@ -40,23 +40,23 @@ func (ref handlerImpl) GetError(e *echo.Context) error {
 	log.Debug().
 		Str("filter", filterQueryParameter).
 		Str("identifier", identifierQueryParameter).
-		Msg("handling error request")
+		Msg("handling GET error request")
 
-	var content string
-	var err error
 	switch filterQueryParameter {
 	case "type":
-		content, err = ref.errorRepository.GetTypeOfErrorByIdentifier(e.Request().Context(), identifierQueryParameter)
+		content, err := ref.errorUsecase.GetTypeOfErrorByIdentifier(e.Request().Context(), identifierQueryParameter)
 		if err != nil {
 			log.Error().Err(err).Msg("error fetching error type")
 			return err
 		}
+		return e.HTML(http.StatusOK, content.Html)
 	case "instance":
-		content, err = ref.errorRepository.GetInstanceOfErrorByIdentifier(e.Request().Context(), identifierQueryParameter)
+		errorInstance, err := ref.errorUsecase.GetInstanceOfErrorByIdentifier(e.Request().Context(), identifierQueryParameter)
 		if err != nil {
 			log.Error().Err(err).Msg("error fetching error instance")
 			return err
 		}
+		return e.JSON(http.StatusOK, errorInstance)
 	default:
 		log.Warn().Str("filter", filterQueryParameter).Msg("invalid filter query parameter")
 		return problemdetails.NewErrorWithStackTrace(problemdetails.Error{
@@ -64,9 +64,8 @@ func (ref handlerImpl) GetError(e *echo.Context) error {
 			Title:      "Invalid Filter",
 			Detail:     "The provided filter query parameter is invalid. Valid values are 'type' and 'instance'",
 			HTTPStatus: http.StatusBadRequest,
-			Instance:   "localhost:8080/v1/error/invalidFilter/1",
+			Instance:   "localhost:8080/v1/error/invalidFilter/",
 			Severity:   problemdetails.Err,
 		})
 	}
-	return e.HTMLBlob(http.StatusOK, []byte(content))
 }
