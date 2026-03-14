@@ -1,7 +1,8 @@
 package controller
 
 import (
-	"delicias-da-lu-service/internal/controller/system"
+	"delicias-da-lu-service.com/mod/internal/controller/system"
+	"delicias-da-lu-service.com/mod/internal/platform/problemdetails"
 
 	"github.com/labstack/echo/v5"
 	"github.com/rs/zerolog/log"
@@ -25,6 +26,8 @@ func NewAPIServer() APIServer {
 }
 
 func (ref apiServerImpl) Start() error {
+	ref.server.HTTPErrorHandler = problemdetails.ErrorHandler
+
 	if err := ref.server.Start(PORT); err != nil {
 		log.Error().Err(err).Msg("server exiting with error")
 		return err
@@ -37,6 +40,7 @@ func (ref apiServerImpl) AddRoutes(testeHandler system.Handler) error {
 	group := ref.server.Group("/v1")
 
 	group.GET("", testeHandler.Get)
+	group.GET("/error", testeHandler.GetError)
 
 	return nil
 }
