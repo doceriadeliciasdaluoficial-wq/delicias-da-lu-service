@@ -8,7 +8,7 @@ import (
 )
 
 type ErrorListUseCase interface {
-	GetTypeOfErrorByIdentifier(context.Context, string) (issue.ErrorType, error)
+	GetTypeOfErrorByIdentifier(context.Context, string) (string, error)
 	GetInstanceOfErrorByIdentifier(context.Context, string) (issue.ErrorInstance, error)
 }
 
@@ -22,8 +22,12 @@ func NewErrorListUseCase(repository errorFirestore.ErrorRepository) ErrorListUse
 	}
 }
 
-func (ref errorListUseCaseImpl) GetTypeOfErrorByIdentifier(ctx context.Context, identifier string) (issue.ErrorType, error) {
-	return ref.errorRepository.GetTypeOfErrorByIdentifier(ctx, identifier)
+func (ref errorListUseCaseImpl) GetTypeOfErrorByIdentifier(ctx context.Context, identifier string) (string, error) {
+	content, err := ref.errorRepository.GetTypeOfErrorByIdentifier(ctx, identifier)
+	if err != nil {
+		return "", err
+	}
+	return content.Html, err
 }
 
 func (ref errorListUseCaseImpl) GetInstanceOfErrorByIdentifier(ctx context.Context, identifier string) (issue.ErrorInstance, error) {
