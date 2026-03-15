@@ -49,7 +49,7 @@ func (ref handlerImpl) GetError(e *echo.Context) error {
 			log.Error().Err(err).Msg("error fetching error type")
 			return err
 		}
-		return e.HTML(http.StatusOK, content.Html)
+		return e.HTML(http.StatusOK, content)
 	case "instance":
 		errorInstance, err := ref.errorUsecase.GetInstanceOfErrorByIdentifier(e.Request().Context(), identifierQueryParameter)
 		if err != nil {
