@@ -1,33 +1,53 @@
 package user
 
-import "os/user"
+import (
+	"context"
+
+	"delicias-da-lu-service.com/mod/internal/entity/user"
+	"delicias-da-lu-service.com/mod/internal/platform/validator"
+	userRepository "delicias-da-lu-service.com/mod/internal/repository/user"
+)
 
 type UserUseCase interface {
-	Create(*user.User) (*user.User, error)
-	Get(string, string) ([]user.User, error)
-	Update(string, *user.User) (*user.User, error)
-	Delete(string) error
+	Create(context.Context, *user.User) (*user.User, error)
+	Get(context.Context, string, string) ([]user.User, error)
+	Update(context.Context, string, *user.User) (*user.User, error)
+	Delete(context.Context, string) error
 }
 
 type userUseCaseImpl struct {
+	userValidator  validator.Validator[user.User]
+	userRepository userRepository.UserRepository
 }
 
-func NewUserUseCase() UserUseCase {
-	return userUseCaseImpl{}
+func NewUserUseCase(userRepository userRepository.UserRepository) UserUseCase {
+	return userUseCaseImpl{
+		userValidator:  NewUserValidator(),
+		userRepository: userRepository,
+	}
 }
 
-func (ref userUseCaseImpl) Create(user *user.User) (*user.User, error) {
-	return nil, nil
+func (ref userUseCaseImpl) Create(ctx context.Context, user *user.User) (*user.User, error) {
+	if err := ref.userValidator.Validate(*user); err != nil {
+		return nil, err
+	}
+	return ref.userRepository.Create(context.Background(), user)
 }
 
-func (ref userUseCaseImpl) Get(id string, zipCode string) ([]user.User, error) {
-	return nil, nil
+func (ref userUseCaseImpl) Get(ctx context.Context, field string, value string) ([]user.User, error) {
+	if field == "id" {
+		field = "DocumentId"
+	}
+	return ref.userRepository.Get(ctx, field, value)
 }
 
-func (ref userUseCaseImpl) Update(id string, user *user.User) (*user.User, error) {
-	return nil, nil
+func (ref userUseCaseImpl) Update(ctx context.Context, id string, user *user.User) (*user.User, error) {
+	if err := ref.userValidator.Validate(*user); err != nil {
+		return nil, err
+	}
+	return ref.userRepository.Update(ctx, id, user)
 }
 
-func (ref userUseCaseImpl) Delete(id string) error {
-	return nil
+func (ref userUseCaseImpl) Delete(ctx context.Context, id string) error {
+	return ref.userRepository.Delete(ctx, id)
 }
