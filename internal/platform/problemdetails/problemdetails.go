@@ -56,6 +56,16 @@ type Error struct {
 
 	Instance string `json:"instance"`
 
+	// Origin information: where the error was generated
+	OriginFile string `json:"origin_file,omitempty"`
+	OriginLine int    `json:"origin_line,omitempty"`
+	OriginFunc string `json:"origin_func,omitempty"`
+
+	// Caller information: where ErrorHandler was invoked
+	CallerFile string `json:"caller_file,omitempty"`
+	CallerLine int    `json:"caller_line,omitempty"`
+	CallerFunc string `json:"caller_func,omitempty"`
+
 	StackTrace []uintptr `json:"-"`
 	Severity   int       `json:"-"`
 
@@ -142,12 +152,17 @@ func NewErrorWithStackTrace(err Error) Error {
 
 func ErrorHandler(e *echo.Context, err error) {
 	problemdetailsError := Error{}
+	caller := resolveCaller(1)
+
 	if !errors.As(err, &problemdetailsError) {
-		origin := resolveCaller(1)
+		origin := resolveCaller(2)
 		logging.ErrorEventFromEcho(e, err).
 			Str("origin_file", origin.File).
 			Int("origin_line", origin.Line).
 			Str("origin_func", origin.Func).
+			Str("caller_file", caller.File).
+			Int("caller_line", caller.Line).
+			Str("caller_func", caller.Func).
 			Str("request_method", e.Request().Method).
 			Str("request_uri", e.Request().RequestURI).
 			Msg("error response handled")
@@ -156,6 +171,12 @@ func ErrorHandler(e *echo.Context, err error) {
 			Title:      "UnexpectedError",
 			Detail:     "An untreatable an unrecognized error was found, please contact support. Specific error can be found on '#/internal'",
 			HTTPStatus: http.StatusInternalServerError,
+			OriginFile: origin.File,
+			OriginLine: origin.Line,
+			OriginFunc: origin.Func,
+			CallerFile: caller.File,
+			CallerLine: caller.Line,
+			CallerFunc: caller.Func,
 			Errors: []ErrorDetails{
 				{
 					Detail:  "doceriadeliciasdaluoficial@gmail.com",
@@ -168,7 +189,7 @@ func ErrorHandler(e *echo.Context, err error) {
 	} else {
 		origin := originFromStack(problemdetailsError.StackTrace)
 		if origin.File == "" {
-			origin = resolveCaller(1)
+			origin = resolveCaller(2)
 		}
 		logging.ErrorEventFromEcho(e, problemdetailsError).
 			Str("error_type", problemdetailsError.Type).
@@ -178,9 +199,18 @@ func ErrorHandler(e *echo.Context, err error) {
 			Str("origin_file", origin.File).
 			Int("origin_line", origin.Line).
 			Str("origin_func", origin.Func).
+			Str("caller_file", caller.File).
+			Int("caller_line", caller.Line).
+			Str("caller_func", caller.Func).
 			Str("request_method", e.Request().Method).
 			Str("request_uri", e.Request().RequestURI).
 			Msg("error response handled")
+		problemdetailsError.OriginFile = origin.File
+		problemdetailsError.OriginLine = origin.Line
+		problemdetailsError.OriginFunc = origin.Func
+		problemdetailsError.CallerFile = caller.File
+		problemdetailsError.CallerLine = caller.Line
+		problemdetailsError.CallerFunc = caller.Func
 	}
 
 	if problemdetailsError.HTTPStatus == 0 {

@@ -121,3 +121,17 @@ func withCaller(logger zerolog.Logger, skip int) zerolog.Logger {
 		Str("caller_func", funcName).
 		Logger()
 }
+
+// ErrorWithContext logs an error with full context: trace_id, user_id, and caller location
+func ErrorWithContext(ctx context.Context, err error) *zerolog.Event {
+	logger := LoggerFromContext(ctx)
+	logger = withCaller(logger, 2)
+	return logger.Error().Err(err)
+}
+
+// ErrorWithEchoContext logs an error with Echo context: trace_id, user_id, and caller location
+func ErrorWithEchoContext(c *echo.Context, err error) *zerolog.Event {
+	logger := LoggerFromEcho(c)
+	logger = withCaller(logger, 2)
+	return logger.Error().Err(err)
+}
