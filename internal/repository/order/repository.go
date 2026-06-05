@@ -99,7 +99,10 @@ func (r orderRepositoryImpl) Create(ctx context.Context, ord *order.Order) (*ord
 		ord.Status = "pending"
 	}
 
-	_, err := r.client.Collection("orders").Doc(ord.ID).Set(ctx, ord)
+	documentRef := r.client.Collection("orders").NewDoc()
+	ord.ID = documentRef.ID
+
+	_, err := documentRef.Set(ctx, ord)
 	if err != nil {
 		return nil, err
 	}
