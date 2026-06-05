@@ -16,6 +16,8 @@ type ErrorRepository interface {
 	GetInstanceOfErrorByIdentifier(ctx context.Context, identifier string) (issue.ErrorInstance, error)
 	UpsertErrorType(ctx context.Context, identifier string, errorType issue.ErrorType) error
 	CreateErrorInstance(ctx context.Context, identifier string, errorInstance issue.ErrorInstance) error
+	DeleteErrorType(ctx context.Context, identifier string) error
+	DeleteErrorInstance(ctx context.Context, identifier string) error
 }
 
 type errorRepositoryImple struct {
@@ -114,5 +116,15 @@ func (ref errorRepositoryImple) UpsertErrorType(ctx context.Context, identifier 
 
 func (ref errorRepositoryImple) CreateErrorInstance(ctx context.Context, identifier string, errorInstance issue.ErrorInstance) error {
 	_, err := ref.client.Collection("instances").Doc(identifier).Set(ctx, errorInstance)
+	return err
+}
+
+func (ref errorRepositoryImple) DeleteErrorType(ctx context.Context, identifier string) error {
+	_, err := ref.client.Collection("types").Doc(identifier).Delete(ctx)
+	return err
+}
+
+func (ref errorRepositoryImple) DeleteErrorInstance(ctx context.Context, identifier string) error {
+	_, err := ref.client.Collection("instances").Doc(identifier).Delete(ctx)
 	return err
 }

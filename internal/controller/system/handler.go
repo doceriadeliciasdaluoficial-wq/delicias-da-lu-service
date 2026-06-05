@@ -13,6 +13,8 @@ import (
 type Handler interface {
 	Get(e *echo.Context) error
 	GetError(e *echo.Context) error
+	CreateErrorTypes(e *echo.Context) error
+	DeleteErrorType(e *echo.Context) error
 }
 
 type handlerImpl struct {
@@ -74,4 +76,62 @@ func (ref handlerImpl) GetError(e *echo.Context) error {
 			Severity:   problemdetails.Err,
 		})
 	}
+}
+
+func (ref handlerImpl) CreateErrorTypes(e *echo.Context) error {
+	logging.DebugEventFromEcho(e).
+		Msg("create error types requested")
+
+	var requests []errorList.CreateErrorTypeRequest
+	if err := e.Bind(&requests); err != nil {
+		logging.WarnEventFromEcho(e).
+			Err(err).
+			Msg("invalid request payload for create error types")
+		return problemdetails.NewErrorWithStackTrace(problemdetails.Error{
+			Type:       "https://delicias-da-lu-514609008596.southamerica-east1.run.app/v1/error?filter=type&identifier=invalid-type",
+			Title:      "Invalid Request",
+			Detail:     "The request payload is invalid",
+			HTTPStatus: http.StatusBadRequest,
+			Severity:   problemdetails.Err,
+		})
+	}
+
+	if err := ref.errorUsecase.CreateErrorTypesFromList(e.Request().Context(), requests); err != nil {
+		logging.ErrorEventFromEcho(e, err).
+			Msg("failed to create error types")
+		return err
+	}
+
+	logging.InfoEventFromEcho(e).
+		Int("count", len(requests)).
+		Msg("error types created successfully")
+
+	return e.JSON(http.StatusCreated, map[string]interface{}{
+		"message": "error types created successfully",
+		"count":   len(requests),
+	})
+}
+
+func (ref handlerImpl) DeleteErrorType(e *echo.Context) error {
+	identifier := e.Param("identifier")
+
+	logging.DebugEventFromEcho(e).
+		Str("identifier", identifier).
+		Msg("delete error type requested")
+
+	if err := ref.errorUsecase.DeleteErrorType(e.Request().Context(), identifier); err != nil {
+		logging.ErrorEventFromEcho(e, err).
+			Str("identifier", identifier).
+			Msg("failed to delete error type")
+		return err
+	}
+
+	logging.InfoEventFromEcho(e).
+		Str("identifier", identifier).
+		Msg("error type deleted successfully")
+
+	return e.JSON(http.StatusOK, map[string]interface{}{
+		"message":    "error type deleted successfully",
+		"identifier": identifier,
+	})
 }

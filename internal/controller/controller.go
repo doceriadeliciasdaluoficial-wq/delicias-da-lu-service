@@ -118,5 +118,9 @@ func (ref apiServerImpl) RegisterRoutes(
 	adminGroup.GET("/orders", orderHandler.GetAll)
 	adminGroup.PUT("/orders/:id", orderHandler.UpdateStatus)
 
+	// Error types management (admin)
+	adminGroup.POST("/admin/error-types", systemHandler.CreateErrorTypes)
+	adminGroup.DELETE("/admin/error-types/:identifier", systemHandler.DeleteErrorType)
+
 	return nil
 }
