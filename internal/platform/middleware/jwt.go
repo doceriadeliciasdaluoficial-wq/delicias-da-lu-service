@@ -4,10 +4,10 @@ import (
 	"net/http"
 	"strings"
 
+	"delicias-da-lu-service.com/mod/internal/platform/logging"
 	"delicias-da-lu-service.com/mod/internal/platform/problemdetails"
 	"delicias-da-lu-service.com/mod/internal/usecase/auth"
 	"github.com/labstack/echo/v5"
-	"github.com/rs/zerolog/log"
 )
 
 func JWTMiddleware(authUseCase auth.AuthUseCase) echo.MiddlewareFunc {
@@ -15,7 +15,9 @@ func JWTMiddleware(authUseCase auth.AuthUseCase) echo.MiddlewareFunc {
 		return func(c *echo.Context) error {
 			authHeader := c.Request().Header.Get("Authorization")
 			if authHeader == "" {
-				log.Warn().Msg("missing authorization header")
+				logging.WarnEventFromEcho(c).
+					Str("auth_header", "missing").
+					Msg("authorization header missing")
 				return problemdetails.NewErrorWithStackTrace(problemdetails.Error{
 					Type:       "https://delicias-da-lu-service.com/docs/errors/unauthorized",
 					Title:      "Unauthorized",
@@ -29,7 +31,9 @@ func JWTMiddleware(authUseCase auth.AuthUseCase) echo.MiddlewareFunc {
 			// Extract token from "Bearer <token>"
 			parts := strings.Split(authHeader, " ")
 			if len(parts) != 2 || parts[0] != "Bearer" {
-				log.Warn().Msg("invalid authorization header format")
+				logging.WarnEventFromEcho(c).
+					Str("auth_header", "invalid_format").
+					Msg("authorization header invalid format")
 				return problemdetails.NewErrorWithStackTrace(problemdetails.Error{
 					Type:       "https://delicias-da-lu-service.com/docs/errors/unauthorized",
 					Title:      "Unauthorized",
@@ -45,7 +49,9 @@ func JWTMiddleware(authUseCase auth.AuthUseCase) echo.MiddlewareFunc {
 			// Validate token
 			userID, err := authUseCase.ValidateToken(c.Request().Context(), token)
 			if err != nil {
-				log.Error().Err(err).Msg("token validation failed")
+				logging.WarnEventFromEcho(c).
+					Err(err).
+					Msg("token validation failed")
 				return err
 			}
 

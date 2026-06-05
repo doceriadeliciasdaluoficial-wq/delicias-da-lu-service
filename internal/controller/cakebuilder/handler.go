@@ -5,9 +5,9 @@ import (
 
 	"delicias-da-lu-service.com/mod/internal/entity/cakebuilder"
 	"delicias-da-lu-service.com/mod/internal/entity/config"
+	"delicias-da-lu-service.com/mod/internal/platform/logging"
 	cakebuildUC "delicias-da-lu-service.com/mod/internal/usecase/cakebuilder"
 	"github.com/labstack/echo/v5"
-	"github.com/rs/zerolog/log"
 )
 
 type CakeBuilderHandler interface {
@@ -38,9 +38,15 @@ func (h cakeBuilderHandlerImpl) GetAll(c *echo.Context) error {
 		active = &val
 	}
 
+	logging.DebugEventFromEcho(c).
+		Str("active", activeStr).
+		Msg("cake builder get all requested")
+
 	components, err := h.cakeBuilderUseCase.GetAll(c.Request().Context(), active)
 	if err != nil {
-		log.Error().Err(err).Msg("failed to get cake builder components")
+		logging.ErrorEventFromEcho(c, err).
+			Str("active", activeStr).
+			Msg("failed to get cake builder components")
 		return err
 	}
 
@@ -64,9 +70,16 @@ func (h cakeBuilderHandlerImpl) GetByType(c *echo.Context) error {
 		active = &val
 	}
 
+	logging.DebugEventFromEcho(c).
+		Str("component_type", componentType).
+		Str("active", activeStr).
+		Msg("cake builder get by type requested")
+
 	components, err := h.cakeBuilderUseCase.GetByType(c.Request().Context(), componentType, active)
 	if err != nil {
-		log.Error().Err(err).Str("type", componentType).Msg("failed to get cake builder components by type")
+		logging.ErrorEventFromEcho(c, err).
+			Str("component_type", componentType).
+			Msg("failed to get cake builder components by type")
 		return err
 	}
 
@@ -80,10 +93,18 @@ func (h cakeBuilderHandlerImpl) GetByType(c *echo.Context) error {
 func (h cakeBuilderHandlerImpl) GetByID(c *echo.Context) error {
 	componentType := c.Param("type")
 	id := c.Param("id")
+	logging.DebugEventFromEcho(c).
+		Str("component_type", componentType).
+		Str("component_id", id).
+		Msg("cake builder get by id requested")
 
 	component, err := h.cakeBuilderUseCase.GetByID(c.Request().Context(), componentType, id)
 	if err != nil {
-		log.Error().Err(err).Str("type", componentType).Str("id", id).Msg("failed to get cake builder component")
+		logging.WarnEventFromEcho(c).
+			Err(err).
+			Str("component_type", componentType).
+			Str("component_id", id).
+			Msg("failed to get cake builder component")
 		return err
 	}
 
@@ -95,17 +116,27 @@ func (h cakeBuilderHandlerImpl) Create(c *echo.Context) error {
 
 	var component cakebuilder.CakeBuilderComponent
 	if err := c.Bind(&component); err != nil {
-		log.Error().Err(err).Msg("failed to parse cake builder component")
+		logging.WarnEventFromEcho(c).
+			Err(err).
+			Str("component_type", componentType).
+			Msg("invalid cake builder payload")
 		return c.JSON(http.StatusBadRequest, map[string]string{
 			"error": "invalid request body",
 		})
 	}
 
+	logging.DebugEventFromEcho(c).
+		Str("component_type", componentType).
+		Str("component_name", component.Name).
+		Msg("cake builder create requested")
+
 	component.Type = componentType
 
 	created, err := h.cakeBuilderUseCase.Create(c.Request().Context(), &component)
 	if err != nil {
-		log.Error().Err(err).Str("type", componentType).Msg("failed to create cake builder component")
+		logging.ErrorEventFromEcho(c, err).
+			Str("component_type", componentType).
+			Msg("failed to create cake builder component")
 		return err
 	}
 
@@ -118,17 +149,30 @@ func (h cakeBuilderHandlerImpl) Update(c *echo.Context) error {
 
 	var component cakebuilder.CakeBuilderComponent
 	if err := c.Bind(&component); err != nil {
-		log.Error().Err(err).Msg("failed to parse cake builder component")
+		logging.WarnEventFromEcho(c).
+			Err(err).
+			Str("component_type", componentType).
+			Str("component_id", id).
+			Msg("invalid cake builder payload")
 		return c.JSON(http.StatusBadRequest, map[string]string{
 			"error": "invalid request body",
 		})
 	}
 
+	logging.DebugEventFromEcho(c).
+		Str("component_type", componentType).
+		Str("component_id", id).
+		Str("component_name", component.Name).
+		Msg("cake builder update requested")
+
 	component.Type = componentType
 
 	updated, err := h.cakeBuilderUseCase.Update(c.Request().Context(), id, &component)
 	if err != nil {
-		log.Error().Err(err).Str("type", componentType).Str("id", id).Msg("failed to update cake builder component")
+		logging.ErrorEventFromEcho(c, err).
+			Str("component_type", componentType).
+			Str("component_id", id).
+			Msg("failed to update cake builder component")
 		return err
 	}
 
@@ -138,9 +182,16 @@ func (h cakeBuilderHandlerImpl) Update(c *echo.Context) error {
 func (h cakeBuilderHandlerImpl) Delete(c *echo.Context) error {
 	componentType := c.Param("type")
 	id := c.Param("id")
+	logging.DebugEventFromEcho(c).
+		Str("component_type", componentType).
+		Str("component_id", id).
+		Msg("cake builder delete requested")
 
 	if err := h.cakeBuilderUseCase.Delete(c.Request().Context(), componentType, id); err != nil {
-		log.Error().Err(err).Str("type", componentType).Str("id", id).Msg("failed to delete cake builder component")
+		logging.ErrorEventFromEcho(c, err).
+			Str("component_type", componentType).
+			Str("component_id", id).
+			Msg("failed to delete cake builder component")
 		return err
 	}
 

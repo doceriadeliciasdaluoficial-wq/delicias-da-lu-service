@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"delicias-da-lu-service.com/mod/internal/platform/logging"
 	"github.com/labstack/echo/v5"
-	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -142,24 +142,14 @@ func NewErrorWithStackTrace(err Error) Error {
 
 func ErrorHandler(e *echo.Context, err error) {
 	problemdetailsError := Error{}
-	userID, _ := e.Get("userID").(string)
 	if !errors.As(err, &problemdetailsError) {
-		origin := originFromStack(problemdetailsError.StackTrace)
-		if origin.File == "" {
-			origin = resolveCaller(1)
-		}
-		caller := resolveCaller(0)
-		log.Error().
-			Err(err).
+		origin := resolveCaller(1)
+		logging.ErrorEventFromEcho(e, err).
 			Str("origin_file", origin.File).
 			Int("origin_line", origin.Line).
 			Str("origin_func", origin.Func).
-			Str("caller_file", caller.File).
-			Int("caller_line", caller.Line).
-			Str("caller_func", caller.Func).
 			Str("request_method", e.Request().Method).
 			Str("request_uri", e.Request().RequestURI).
-			Str("user_id", userID).
 			Msg("error response handled")
 		problemdetailsError = Error{
 			Type:       "unexpectedUnhandledError",
@@ -180,9 +170,7 @@ func ErrorHandler(e *echo.Context, err error) {
 		if origin.File == "" {
 			origin = resolveCaller(1)
 		}
-		caller := resolveCaller(0)
-		log.Error().
-			Err(problemdetailsError).
+		logging.ErrorEventFromEcho(e, problemdetailsError).
 			Str("error_type", problemdetailsError.Type).
 			Str("error_title", problemdetailsError.Title).
 			Str("error_instance", problemdetailsError.Instance).
@@ -190,12 +178,8 @@ func ErrorHandler(e *echo.Context, err error) {
 			Str("origin_file", origin.File).
 			Int("origin_line", origin.Line).
 			Str("origin_func", origin.Func).
-			Str("caller_file", caller.File).
-			Int("caller_line", caller.Line).
-			Str("caller_func", caller.Func).
 			Str("request_method", e.Request().Method).
 			Str("request_uri", e.Request().RequestURI).
-			Str("user_id", userID).
 			Msg("error response handled")
 	}
 
@@ -222,12 +206,13 @@ func ErrorHandler(e *echo.Context, err error) {
 			BaseURL:     baseURL,
 			OccurredAt:  time.Now().UTC(),
 			RequestBody: "",
-			TraceID:     "",
+			TraceID:     logging.TraceIDFromContext(e.Request().Context()),
 		}
 
 		instanceID, recordErr := errorRecorder.Record(e.Request().Context(), record)
 		if recordErr != nil {
-			log.Error().Err(recordErr).Msg("failed to record error instance")
+			logging.ErrorEventFromEcho(e, recordErr).
+				Msg("failed to record error instance")
 		} else if instanceID != "" && (problemdetailsError.Instance == "" || !strings.Contains(problemdetailsError.Instance, "filter=instance")) {
 			problemdetailsError.Instance = fmt.Sprintf("%s/v1/error?filter=instance&identifier=%s", baseURL, instanceID)
 		}

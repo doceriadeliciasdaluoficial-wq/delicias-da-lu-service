@@ -5,7 +5,6 @@ go 1.26.1
 require (
 	cloud.google.com/go/firestore v1.21.0
 	github.com/golang-jwt/jwt/v5 v5.3.1
-	github.com/joho/godotenv v1.5.1
 	github.com/labstack/echo/v5 v5.0.4
 	github.com/rs/zerolog v1.34.0
 	google.golang.org/grpc v1.79.1

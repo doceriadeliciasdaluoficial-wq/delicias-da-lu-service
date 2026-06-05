@@ -8,10 +8,10 @@ import (
 	"time"
 
 	"delicias-da-lu-service.com/mod/internal/entity/user"
+	"delicias-da-lu-service.com/mod/internal/platform/logging"
 	"delicias-da-lu-service.com/mod/internal/platform/problemdetails"
 	userRepo "delicias-da-lu-service.com/mod/internal/repository/user"
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/rs/zerolog/log"
 )
 
 type AuthUseCase interface {
@@ -36,7 +36,10 @@ func (a authUseCaseImpl) Login(ctx context.Context, username, password string) (
 	// Get user by username
 	usr, err := a.userRepository.GetByUsername(ctx, username)
 	if err != nil {
-		log.Error().Err(err).Str("username", username).Msg("user not found")
+		logging.WarnEvent(ctx).
+			Err(err).
+			Str("username", username).
+			Msg("user not found")
 		return nil, problemdetails.NewErrorWithStackTrace(problemdetails.Error{
 			Type:       "https://delicias-da-lu-service.com/docs/errors/invalid-credentials",
 			Title:      "Invalid Credentials",
@@ -50,7 +53,9 @@ func (a authUseCaseImpl) Login(ctx context.Context, username, password string) (
 	// Compare passwords (simple hash comparison - in production use bcrypt)
 	passwordHash := hashPassword(password)
 	if usr.Password != passwordHash {
-		log.Warn().Str("username", username).Msg("invalid password")
+		logging.WarnEvent(ctx).
+			Str("username", username).
+			Msg("invalid password")
 		return nil, problemdetails.NewErrorWithStackTrace(problemdetails.Error{
 			Type:       "https://delicias-da-lu-service.com/docs/errors/invalid-credentials",
 			Title:      "Invalid Credentials",
@@ -63,13 +68,17 @@ func (a authUseCaseImpl) Login(ctx context.Context, username, password string) (
 
 	// Update last login
 	if err := a.userRepository.UpdateLastLogin(ctx, usr.ID); err != nil {
-		log.Error().Err(err).Msg("failed to update last login")
+		logging.ErrorEvent(ctx, err).
+			Str("user_id", usr.ID).
+			Msg("failed to update last login")
 	}
 
 	// Generate JWT token
 	token, err := a.generateToken(usr.ID)
 	if err != nil {
-		log.Error().Err(err).Msg("failed to generate JWT token")
+		logging.ErrorEvent(ctx, err).
+			Str("user_id", usr.ID).
+			Msg("failed to generate JWT token")
 		return nil, err
 	}
 

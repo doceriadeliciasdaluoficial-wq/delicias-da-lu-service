@@ -40,6 +40,7 @@ type apiServerImpl struct {
 
 func NewAPIServer() APIServer {
 	server := echo.New()
+	server.Use(middleware.TraceIDMiddleware())
 	server.Use(middleware.RequestLogger())
 	return apiServerImpl{
 		server: server,
@@ -50,7 +51,7 @@ func (ref apiServerImpl) Start() error {
 	ref.server.HTTPErrorHandler = problemdetails.ErrorHandler
 
 	if err := ref.server.Start(PORT); err != nil {
-		log.Error().Err(err).Msg("server exiting with error")
+		log.Error().Err(err).Str("component", "api_server").Msg("server exiting with error")
 		return err
 	}
 	return nil

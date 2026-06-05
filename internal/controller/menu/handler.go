@@ -4,9 +4,9 @@ import (
 	"net/http"
 
 	"delicias-da-lu-service.com/mod/internal/entity/menu"
+	"delicias-da-lu-service.com/mod/internal/platform/logging"
 	menuUC "delicias-da-lu-service.com/mod/internal/usecase/menu"
 	"github.com/labstack/echo/v5"
-	"github.com/rs/zerolog/log"
 )
 
 type MenuHandler interface {
@@ -38,9 +38,17 @@ func (h menuHandlerImpl) GetAll(c *echo.Context) error {
 		active = &val
 	}
 
+	logging.DebugEventFromEcho(c).
+		Str("category", category).
+		Str("active", activeStr).
+		Msg("menu get all requested")
+
 	items, err := h.menuUseCase.GetAll(c.Request().Context(), active, category)
 	if err != nil {
-		log.Error().Err(err).Msg("failed to get menu items")
+		logging.ErrorEventFromEcho(c, err).
+			Str("category", category).
+			Str("active", activeStr).
+			Msg("failed to get menu items")
 		return err
 	}
 
@@ -53,10 +61,16 @@ func (h menuHandlerImpl) GetAll(c *echo.Context) error {
 }
 func (h menuHandlerImpl) GetByID(c *echo.Context) error {
 	id := c.Param("id")
+	logging.DebugEventFromEcho(c).
+		Str("menu_item_id", id).
+		Msg("menu get by id requested")
 
 	item, err := h.menuUseCase.GetByID(c.Request().Context(), id)
 	if err != nil {
-		log.Error().Err(err).Str("id", id).Msg("failed to get menu item")
+		logging.WarnEventFromEcho(c).
+			Err(err).
+			Str("menu_item_id", id).
+			Msg("failed to get menu item")
 		return err
 	}
 
@@ -66,15 +80,25 @@ func (h menuHandlerImpl) GetByID(c *echo.Context) error {
 func (h menuHandlerImpl) Create(c *echo.Context) error {
 	var item menu.MenuItem
 	if err := c.Bind(&item); err != nil {
-		log.Error().Err(err).Msg("failed to parse menu item")
+		logging.WarnEventFromEcho(c).
+			Err(err).
+			Msg("invalid menu item payload")
 		return c.JSON(http.StatusBadRequest, map[string]string{
 			"error": "invalid request body",
 		})
 	}
 
+	logging.DebugEventFromEcho(c).
+		Str("menu_item_name", item.Name).
+		Str("category", item.Category).
+		Msg("menu create requested")
+
 	created, err := h.menuUseCase.Create(c.Request().Context(), &item)
 	if err != nil {
-		log.Error().Err(err).Msg("failed to create menu item")
+		logging.ErrorEventFromEcho(c, err).
+			Str("menu_item_name", item.Name).
+			Str("category", item.Category).
+			Msg("failed to create menu item")
 		return err
 	}
 
@@ -86,15 +110,25 @@ func (h menuHandlerImpl) Update(c *echo.Context) error {
 
 	var item menu.MenuItem
 	if err := c.Bind(&item); err != nil {
-		log.Error().Err(err).Msg("failed to parse menu item")
+		logging.WarnEventFromEcho(c).
+			Err(err).
+			Str("menu_item_id", id).
+			Msg("invalid menu item payload")
 		return c.JSON(http.StatusBadRequest, map[string]string{
 			"error": "invalid request body",
 		})
 	}
 
+	logging.DebugEventFromEcho(c).
+		Str("menu_item_id", id).
+		Str("menu_item_name", item.Name).
+		Msg("menu update requested")
+
 	updated, err := h.menuUseCase.Update(c.Request().Context(), id, &item)
 	if err != nil {
-		log.Error().Err(err).Str("id", id).Msg("failed to update menu item")
+		logging.ErrorEventFromEcho(c, err).
+			Str("menu_item_id", id).
+			Msg("failed to update menu item")
 		return err
 	}
 
@@ -103,9 +137,14 @@ func (h menuHandlerImpl) Update(c *echo.Context) error {
 }
 func (h menuHandlerImpl) Delete(c *echo.Context) error {
 	id := c.Param("id")
+	logging.DebugEventFromEcho(c).
+		Str("menu_item_id", id).
+		Msg("menu delete requested")
 
 	if err := h.menuUseCase.Delete(c.Request().Context(), id); err != nil {
-		log.Error().Err(err).Str("id", id).Msg("failed to delete menu item")
+		logging.ErrorEventFromEcho(c, err).
+			Str("menu_item_id", id).
+			Msg("failed to delete menu item")
 		return err
 	}
 
@@ -120,15 +159,26 @@ func (h menuHandlerImpl) UpdateOrder(c *echo.Context) error {
 	}
 
 	if err := c.Bind(&req); err != nil {
-		log.Error().Err(err).Msg("failed to parse order update request")
+		logging.WarnEventFromEcho(c).
+			Err(err).
+			Str("menu_item_id", id).
+			Msg("invalid menu order payload")
 		return c.JSON(http.StatusBadRequest, map[string]string{
 			"error": "invalid request body",
 		})
 	}
 
+	logging.DebugEventFromEcho(c).
+		Str("menu_item_id", id).
+		Int("order", req.Order).
+		Msg("menu order update requested")
+
 	updated, err := h.menuUseCase.UpdateOrder(c.Request().Context(), id, req.Order)
 	if err != nil {
-		log.Error().Err(err).Str("id", id).Int("order", req.Order).Msg("failed to update menu item order")
+		logging.ErrorEventFromEcho(c, err).
+			Str("menu_item_id", id).
+			Int("order", req.Order).
+			Msg("failed to update menu item order")
 		return err
 	}
 

@@ -5,9 +5,9 @@ import (
 	"strings"
 
 	"delicias-da-lu-service.com/mod/internal/entity/user"
+	"delicias-da-lu-service.com/mod/internal/platform/logging"
 	authUC "delicias-da-lu-service.com/mod/internal/usecase/auth"
 	"github.com/labstack/echo/v5"
-	"github.com/rs/zerolog/log"
 )
 
 type AuthHandler interface {
@@ -28,11 +28,17 @@ func NewAuthHandler(authUseCase authUC.AuthUseCase) AuthHandler {
 func (h authHandlerImpl) Login(c *echo.Context) error {
 	var req user.LoginRequest
 	if err := c.Bind(&req); err != nil {
-		log.Error().Err(err).Msg("failed to parse login request")
+		logging.WarnEventFromEcho(c).
+			Err(err).
+			Msg("invalid login payload")
 		return c.JSON(http.StatusBadRequest, map[string]string{
 			"error": "invalid request body",
 		})
 	}
+
+	logging.DebugEventFromEcho(c).
+		Str("username", req.Username).
+		Msg("auth login requested")
 
 	response, err := h.authUseCase.Login(c.Request().Context(), req.Username, req.Password)
 	if err != nil {
@@ -45,6 +51,9 @@ func (h authHandlerImpl) Login(c *echo.Context) error {
 func (h authHandlerImpl) Refresh(c *echo.Context) error {
 	authHeader := c.Request().Header.Get("Authorization")
 	if authHeader == "" {
+		logging.WarnEventFromEcho(c).
+			Str("auth_header", "missing").
+			Msg("auth refresh missing header")
 		return c.JSON(http.StatusUnauthorized, map[string]string{
 			"error": "missing authorization header",
 		})
@@ -53,10 +62,16 @@ func (h authHandlerImpl) Refresh(c *echo.Context) error {
 	// Extract token (assuming "Bearer <token>" format)
 	parts := strings.Split(authHeader, " ")
 	if len(parts) != 2 || parts[0] != "Bearer" {
+		logging.WarnEventFromEcho(c).
+			Str("auth_header", "invalid_format").
+			Msg("auth refresh invalid header")
 		return c.JSON(http.StatusUnauthorized, map[string]string{
 			"error": "invalid authorization header",
 		})
 	}
+
+	logging.DebugEventFromEcho(c).
+		Msg("auth refresh requested")
 
 	token := parts[1]
 	newToken, err := h.authUseCase.RefreshToken(c.Request().Context(), token)

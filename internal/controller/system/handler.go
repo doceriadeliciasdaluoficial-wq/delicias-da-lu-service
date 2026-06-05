@@ -3,11 +3,11 @@ package system
 import (
 	"net/http"
 
+	"delicias-da-lu-service.com/mod/internal/platform/logging"
 	"delicias-da-lu-service.com/mod/internal/platform/problemdetails"
 	"delicias-da-lu-service.com/mod/internal/usecase/errorList"
 
 	"github.com/labstack/echo/v5"
-	"github.com/rs/zerolog/log"
 )
 
 type Handler interface {
@@ -37,28 +37,34 @@ func (ref handlerImpl) GetError(e *echo.Context) error {
 	filterQueryParameter := e.QueryParam("filter")
 	identifierQueryParameter := e.QueryParam("identifier")
 
-	log.Debug().
+	logging.DebugEventFromEcho(e).
 		Str("filter", filterQueryParameter).
 		Str("identifier", identifierQueryParameter).
-		Msg("handling GET error request")
+		Msg("error documentation requested")
 
 	switch filterQueryParameter {
 	case "type":
 		content, err := ref.errorUsecase.GetTypeOfErrorByIdentifier(e.Request().Context(), identifierQueryParameter)
 		if err != nil {
-			log.Error().Err(err).Msg("error fetching error type")
+			logging.ErrorEventFromEcho(e, err).
+				Str("identifier", identifierQueryParameter).
+				Msg("failed to fetch error type")
 			return err
 		}
 		return e.HTML(http.StatusOK, content)
 	case "instance":
 		htmlContent, err := ref.errorUsecase.GetInstanceHTMLByIdentifier(e.Request().Context(), identifierQueryParameter)
 		if err != nil {
-			log.Error().Err(err).Msg("error fetching error instance")
+			logging.ErrorEventFromEcho(e, err).
+				Str("identifier", identifierQueryParameter).
+				Msg("failed to fetch error instance")
 			return err
 		}
 		return e.HTML(http.StatusOK, htmlContent)
 	default:
-		log.Warn().Str("filter", filterQueryParameter).Msg("invalid filter query parameter")
+		logging.WarnEventFromEcho(e).
+			Str("filter", filterQueryParameter).
+			Msg("invalid filter query parameter")
 		return problemdetails.NewErrorWithStackTrace(problemdetails.Error{
 			Type:       "https://delicias-da-lu-514609008596.southamerica-east1.run.app/v1/error?filter=type&identifier=invalidFilter",
 			Title:      "Invalid Filter",

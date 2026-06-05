@@ -34,7 +34,7 @@ import (
 )
 
 func main() {
-
+	logger := log.With().Str("component", "bootstrap").Logger()
 	ctx := context.Background()
 
 	// Initialize Firestore client
@@ -45,9 +45,11 @@ func main() {
 
 	client, err := firestore.NewClient(ctx, projectID)
 	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to create Firestore client")
+		logger.Fatal().Err(err).Str("project_id", projectID).Msg("failed to create Firestore client")
 	}
 	defer client.Close()
+
+	logger.Info().Str("project_id", projectID).Msg("firestore client initialized")
 
 	// Initialize repositories
 	userRepository := repoUser.NewUserRepository(client)
@@ -75,7 +77,7 @@ func main() {
 
 	problemdetails.SetErrorRecorder(errorRecorder)
 	if err := errorListUseCase.SeedErrorTypes(ctx); err != nil {
-		log.Warn().Err(err).Msg("Failed to seed error types")
+		logger.Warn().Err(err).Msg("failed to seed error types")
 	}
 
 	// Initialize handlers
@@ -103,11 +105,13 @@ func main() {
 		orderHandler,
 		systemHandler,
 	); err != nil {
-		log.Fatal().Err(err).Msg("Failed to register routes")
+		logger.Fatal().Err(err).Msg("failed to register routes")
 	}
+
+	logger.Info().Msg("routes registered")
 
 	// Start server
 	if err := server.Start(); err != nil {
-		log.Fatal().Err(err).Msg("Server failed to start")
+		logger.Fatal().Err(err).Msg("server failed to start")
 	}
 }

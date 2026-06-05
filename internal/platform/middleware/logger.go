@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"time"
 
+	"delicias-da-lu-service.com/mod/internal/platform/logging"
 	"github.com/labstack/echo/v5"
-	"github.com/rs/zerolog/log"
 )
 
 func RequestLogger() echo.MiddlewareFunc {
@@ -24,11 +24,11 @@ func RequestLogger() echo.MiddlewareFunc {
 				size = resp.Size
 			}
 
-			userID, _ := c.Get("userID").(string)
+			traceID := TraceIDFromEcho(c)
 			latency := time.Since(start)
-			event := log.Info()
+			event := logging.InfoEventFromEcho(c)
 			if err != nil {
-				event = log.Error().Err(err)
+				event = logging.ErrorEventFromEcho(c, err)
 			}
 
 			event.
@@ -40,7 +40,7 @@ func RequestLogger() echo.MiddlewareFunc {
 				Int64("bytes", size).
 				Str("remote_ip", c.RealIP()).
 				Str("user_agent", c.Request().UserAgent()).
-				Str("user_id", userID).
+				Str("trace_id", traceID).
 				Msg("request completed")
 
 			return err

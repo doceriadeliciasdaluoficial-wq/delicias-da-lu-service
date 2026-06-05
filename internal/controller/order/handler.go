@@ -5,9 +5,9 @@ import (
 	"strconv"
 
 	"delicias-da-lu-service.com/mod/internal/entity/order"
+	"delicias-da-lu-service.com/mod/internal/platform/logging"
 	orderUC "delicias-da-lu-service.com/mod/internal/usecase/order"
 	"github.com/labstack/echo/v5"
-	"github.com/rs/zerolog/log"
 )
 
 type OrderHandler interface {
@@ -46,9 +46,19 @@ func (h orderHandlerImpl) GetAll(c *echo.Context) error {
 		}
 	}
 
+	logging.DebugEventFromEcho(c).
+		Str("status", status).
+		Int("limit", limit).
+		Int("offset", offset).
+		Msg("order list requested")
+
 	result, err := h.orderUseCase.GetAll(c.Request().Context(), status, limit, offset)
 	if err != nil {
-		log.Error().Err(err).Msg("failed to get orders")
+		logging.ErrorEventFromEcho(c, err).
+			Str("status", status).
+			Int("limit", limit).
+			Int("offset", offset).
+			Msg("failed to get orders")
 		return err
 	}
 
@@ -57,10 +67,16 @@ func (h orderHandlerImpl) GetAll(c *echo.Context) error {
 
 func (h orderHandlerImpl) GetByID(c *echo.Context) error {
 	id := c.Param("id")
+	logging.DebugEventFromEcho(c).
+		Str("order_id", id).
+		Msg("order get by id requested")
 
 	ord, err := h.orderUseCase.GetByID(c.Request().Context(), id)
 	if err != nil {
-		log.Error().Err(err).Str("id", id).Msg("failed to get order")
+		logging.WarnEventFromEcho(c).
+			Err(err).
+			Str("order_id", id).
+			Msg("failed to get order")
 		return err
 	}
 
@@ -70,15 +86,24 @@ func (h orderHandlerImpl) GetByID(c *echo.Context) error {
 func (h orderHandlerImpl) Create(c *echo.Context) error {
 	var ord order.Order
 	if err := c.Bind(&ord); err != nil {
-		log.Error().Err(err).Msg("failed to parse order")
+		logging.WarnEventFromEcho(c).
+			Err(err).
+			Msg("invalid order payload")
 		return c.JSON(http.StatusBadRequest, map[string]string{
 			"error": "invalid request body",
 		})
 	}
 
+	logging.DebugEventFromEcho(c).
+		Str("customer_name", ord.CustomerInfo.Name).
+		Str("customer_phone", ord.CustomerInfo.Phone).
+		Msg("order create requested")
+
 	created, err := h.orderUseCase.Create(c.Request().Context(), &ord)
 	if err != nil {
-		log.Error().Err(err).Msg("failed to create order")
+		logging.ErrorEventFromEcho(c, err).
+			Str("customer_name", ord.CustomerInfo.Name).
+			Msg("failed to create order")
 		return err
 	}
 
@@ -93,15 +118,26 @@ func (h orderHandlerImpl) UpdateStatus(c *echo.Context) error {
 	}
 
 	if err := c.Bind(&req); err != nil {
-		log.Error().Err(err).Msg("failed to parse status update request")
+		logging.WarnEventFromEcho(c).
+			Err(err).
+			Str("order_id", id).
+			Msg("invalid order status payload")
 		return c.JSON(http.StatusBadRequest, map[string]string{
 			"error": "invalid request body",
 		})
 	}
 
+	logging.DebugEventFromEcho(c).
+		Str("order_id", id).
+		Str("status", req.Status).
+		Msg("order status update requested")
+
 	updated, err := h.orderUseCase.UpdateStatus(c.Request().Context(), id, req.Status)
 	if err != nil {
-		log.Error().Err(err).Str("id", id).Str("status", req.Status).Msg("failed to update order status")
+		logging.ErrorEventFromEcho(c, err).
+			Str("order_id", id).
+			Str("status", req.Status).
+			Msg("failed to update order status")
 		return err
 	}
 

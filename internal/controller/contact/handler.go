@@ -4,9 +4,9 @@ import (
 	"net/http"
 
 	"delicias-da-lu-service.com/mod/internal/entity/contact"
+	"delicias-da-lu-service.com/mod/internal/platform/logging"
 	contactUC "delicias-da-lu-service.com/mod/internal/usecase/contact"
 	"github.com/labstack/echo/v5"
-	"github.com/rs/zerolog/log"
 )
 
 type ContactHandler interface {
@@ -27,7 +27,8 @@ func NewContactHandler(contactUseCase contactUC.ContactUseCase) ContactHandler {
 func (h contactHandlerImpl) Get(c *echo.Context) error {
 	cnt, err := h.contactUseCase.Get(c.Request().Context())
 	if err != nil {
-		log.Error().Err(err).Msg("failed to get contacts")
+		logging.ErrorEventFromEcho(c, err).
+			Msg("failed to get contacts")
 		return err
 	}
 
@@ -37,15 +38,23 @@ func (h contactHandlerImpl) Get(c *echo.Context) error {
 func (h contactHandlerImpl) Update(c *echo.Context) error {
 	var cnt contact.Contact
 	if err := c.Bind(&cnt); err != nil {
-		log.Error().Err(err).Msg("failed to parse contact")
+		logging.WarnEventFromEcho(c).
+			Err(err).
+			Msg("invalid contact payload")
 		return c.JSON(http.StatusBadRequest, map[string]string{
 			"error": "invalid request body",
 		})
 	}
 
+	logging.DebugEventFromEcho(c).
+		Str("email", cnt.Email).
+		Str("instagram", cnt.Instagram).
+		Msg("contacts update requested")
+
 	updated, err := h.contactUseCase.Update(c.Request().Context(), &cnt)
 	if err != nil {
-		log.Error().Err(err).Msg("failed to update contacts")
+		logging.ErrorEventFromEcho(c, err).
+			Msg("failed to update contacts")
 		return err
 	}
 
