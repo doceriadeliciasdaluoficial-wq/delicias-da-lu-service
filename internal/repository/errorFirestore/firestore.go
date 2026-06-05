@@ -108,7 +108,7 @@ func (ref errorRepositoryImple) UpsertErrorType(ctx context.Context, identifier 
 		return err
 	}
 
-	_, err = docRef.Set(ctx, errorType, firestore.MergeAll)
+	_, err = docRef.Set(ctx, errorType)
 	return err
 }
 
