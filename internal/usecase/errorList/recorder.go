@@ -41,12 +41,14 @@ func (ref errorRecorderImpl) Record(ctx context.Context, record problemdetails.E
 	}
 
 	typeHTML := buildTypeHTML(typeHTMLData{
-		Identifier: typeIdentifier,
-		Title:      record.Title,
-		Detail:     record.Detail,
-		Status:     record.Status,
-		BaseURL:    baseURL,
-		UpdatedAt:  time.Now().UTC(),
+		Identifier:   typeIdentifier,
+		Title:        record.Title,
+		Detail:       record.Detail,
+		Resolution:   "Please contact support with your trace ID if you need assistance.",
+		Status:       record.Status,
+		BaseURL:      baseURL,
+		SupportEmail: "doceriadeliciasdaluoficial@gmail.com",
+		UpdatedAt:    time.Now().UTC(),
 	})
 
 	if err := ref.errorRepository.UpsertErrorType(ctx, typeIdentifier, issue.ErrorType{

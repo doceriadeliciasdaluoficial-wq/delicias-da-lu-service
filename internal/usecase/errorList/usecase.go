@@ -9,10 +9,12 @@ import (
 )
 
 type CreateErrorTypeRequest struct {
-	Identifier string `json:"identifier"`
-	Title      string `json:"title"`
-	Detail     string `json:"detail"`
-	Status     int    `json:"status"`
+	Identifier   string `json:"identifier"`
+	Title        string `json:"title"`
+	Detail       string `json:"detail"`
+	Resolution   string `json:"resolution"`
+	Status       int    `json:"status"`
+	SupportEmail string `json:"support_email"`
 }
 
 type ErrorListUseCase interface {
@@ -57,11 +59,13 @@ func (ref errorListUseCaseImpl) GetInstanceHTMLByIdentifier(ctx context.Context,
 func (ref errorListUseCaseImpl) CreateErrorTypesFromList(ctx context.Context, requests []CreateErrorTypeRequest) error {
 	for _, req := range requests {
 		html := buildTypeHTML(typeHTMLData{
-			Identifier: req.Identifier,
-			Title:      req.Title,
-			Detail:     req.Detail,
-			Status:     req.Status,
-			UpdatedAt:  time.Now().UTC(),
+			Identifier:   req.Identifier,
+			Title:        req.Title,
+			Detail:       req.Detail,
+			Resolution:   req.Resolution,
+			Status:       req.Status,
+			SupportEmail: req.SupportEmail,
+			UpdatedAt:    time.Now().UTC(),
 		})
 
 		err := ref.errorRepository.UpsertErrorType(ctx, req.Identifier, issue.ErrorType{
