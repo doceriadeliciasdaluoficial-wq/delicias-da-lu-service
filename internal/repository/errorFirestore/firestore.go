@@ -35,7 +35,7 @@ func (ref errorRepositoryImple) GetTypeOfErrorByIdentifier(ctx context.Context, 
 				Title:      "Error Type Not Found",
 				Detail:     "No error type found for the provided identifier",
 				HTTPStatus: http.StatusNotFound,
-				Instance:   "localhost:8080/v1/error/type=instance&identifier=",
+				Instance:   "https://delicias-da-lu-514609008596.southamerica-east1.run.app/v1/error/type=instance&identifier=",
 				Severity:   problemdetails.Err,
 			})
 		}
@@ -52,7 +52,7 @@ func (ref errorRepositoryImple) GetTypeOfErrorByIdentifier(ctx context.Context, 
 			Title:      "Error Type Not Found",
 			Detail:     "No error type found for the provided identifier",
 			HTTPStatus: http.StatusNotFound,
-			Instance:   "localhost:8080/v1/error/type/",
+			Instance:   "https://delicias-da-lu-514609008596.southamerica-east1.run.app/v1/error/type/",
 			Severity:   problemdetails.Err,
 		})
 	}
@@ -67,7 +67,7 @@ func (ref errorRepositoryImple) GetInstanceOfErrorByIdentifier(ctx context.Conte
 				Title:      "Error Instance Not Found",
 				Detail:     "No error instance found for the provided identifier",
 				HTTPStatus: http.StatusNotFound,
-				Instance:   "localhost:8080/v1/error/type=instance&identifier=",
+				Instance:   "https://delicias-da-lu-514609008596.southamerica-east1.run.app/v1/error/type=instance&identifier=",
 				Severity:   problemdetails.Err,
 			})
 		}
@@ -80,7 +80,7 @@ func (ref errorRepositoryImple) GetInstanceOfErrorByIdentifier(ctx context.Conte
 			Title:      "Error Instance Not Found",
 			Detail:     "No error instance found for the provided identifier",
 			HTTPStatus: http.StatusNotFound,
-			Instance:   "localhost:8080/v1/error/type=instance&identifier=",
+			Instance:   "https://delicias-da-lu-514609008596.southamerica-east1.run.app/v1/error/type=instance&identifier=",
 			Severity:   problemdetails.Err,
 		})
 	}

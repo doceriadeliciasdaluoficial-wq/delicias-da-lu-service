@@ -83,7 +83,7 @@ func ErrorHandler(e *echo.Context, err error) {
 				},
 			},
 
-			Instance: "localhost:8080/v1/error/unexpectedUnhandledError/",
+			Instance: "https://delicias-da-lu-514609008596.southamerica-east1.run.app/v1/error/unexpectedUnhandledError/",
 
 			Err: err,
 		})

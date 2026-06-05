@@ -34,7 +34,7 @@ func (r contactRepositoryImpl) Get(ctx context.Context) (*contact.Contact, error
 			Title:      "Contacts Not Found",
 			Detail:     "No contact information available",
 			HTTPStatus: http.StatusNotFound,
-			Instance:   "localhost:8080/v1/contacts",
+			Instance:   "https://delicias-da-lu-514609008596.southamerica-east1.run.app/v1/contacts",
 			Severity:   problemdetails.Err,
 		})
 	}

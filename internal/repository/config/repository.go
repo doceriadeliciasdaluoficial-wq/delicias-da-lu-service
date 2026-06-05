@@ -34,7 +34,7 @@ func (r configRepositoryImpl) Get(ctx context.Context) (*config.SiteConfig, erro
 			Title:      "Configuration Not Found",
 			Detail:     "Unable to retrieve site configuration",
 			HTTPStatus: http.StatusInternalServerError,
-			Instance:   "localhost:8080/v1/config",
+			Instance:   "https://delicias-da-lu-514609008596.southamerica-east1.run.app/v1/config",
 			Severity:   problemdetails.Err,
 		})
 	}

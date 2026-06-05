@@ -42,7 +42,7 @@ func (r userRepositoryImpl) GetByUsername(ctx context.Context, username string) 
 			Title:      "User Not Found",
 			Detail:     fmt.Sprintf("No user found with username: %s", username),
 			HTTPStatus: http.StatusNotFound,
-			Instance:   "localhost:8080/v1/auth/login",
+			Instance:   "https://delicias-da-lu-514609008596.southamerica-east1.run.app/v1/auth/login",
 			Severity:   problemdetails.Err,
 		})
 	}
@@ -64,7 +64,7 @@ func (r userRepositoryImpl) GetByID(ctx context.Context, id string) (*user.Admin
 				Title:      "User Not Found",
 				Detail:     fmt.Sprintf("No user found with ID: %s", id),
 				HTTPStatus: http.StatusNotFound,
-				Instance:   fmt.Sprintf("localhost:8080/v1/users/%s", id),
+				Instance:   fmt.Sprintf("https://delicias-da-lu-514609008596.southamerica-east1.run.app/v1/users/%s", id),
 				Severity:   problemdetails.Err,
 			})
 		}

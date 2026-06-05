@@ -71,7 +71,7 @@ func (r cakeBuilderRepositoryImpl) GetByID(ctx context.Context, componentType, i
 				Title:      "Cake Builder Component Not Found",
 				Detail:     fmt.Sprintf("No component found with ID: %s", id),
 				HTTPStatus: http.StatusNotFound,
-				Instance:   fmt.Sprintf("localhost:8080/v1/cake-builder/%s/%s", componentType, id),
+				Instance:   fmt.Sprintf("https://delicias-da-lu-514609008596.southamerica-east1.run.app/v1/cake-builder/%s/%s", componentType, id),
 				Severity:   problemdetails.Err,
 			})
 		}
@@ -89,7 +89,7 @@ func (r cakeBuilderRepositoryImpl) GetByID(ctx context.Context, componentType, i
 			Title:      "Invalid Component Type",
 			Detail:     fmt.Sprintf("Component type mismatch: expected %s, got %s", componentType, component.Type),
 			HTTPStatus: http.StatusBadRequest,
-			Instance:   fmt.Sprintf("localhost:8080/v1/cake-builder/%s/%s", componentType, id),
+			Instance:   fmt.Sprintf("https://delicias-da-lu-514609008596.southamerica-east1.run.app/v1/cake-builder/%s/%s", componentType, id),
 			Severity:   problemdetails.Err,
 		})
 	}

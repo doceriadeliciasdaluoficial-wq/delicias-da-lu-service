@@ -60,11 +60,11 @@ func (ref handlerImpl) GetError(e *echo.Context) error {
 	default:
 		log.Warn().Str("filter", filterQueryParameter).Msg("invalid filter query parameter")
 		return problemdetails.NewErrorWithStackTrace(problemdetails.Error{
-			Type:       "localhost:8080/v1/error?filter=type&identifier=invalidFilter",
+			Type:       "https://delicias-da-lu-514609008596.southamerica-east1.run.app/v1/error?filter=type&identifier=invalidFilter",
 			Title:      "Invalid Filter",
 			Detail:     "The provided filter query parameter is invalid. Valid values are 'type' and 'instance'",
 			HTTPStatus: http.StatusBadRequest,
-			Instance:   "localhost:8080/v1/error/invalidFilter/",
+			Instance:   "https://delicias-da-lu-514609008596.southamerica-east1.run.app/v1/error/invalidFilter/",
 			Severity:   problemdetails.Err,
 		})
 	}

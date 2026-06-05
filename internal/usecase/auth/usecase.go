@@ -42,7 +42,7 @@ func (a authUseCaseImpl) Login(ctx context.Context, username, password string) (
 			Title:      "Invalid Credentials",
 			Detail:     "The provided username or password is incorrect",
 			HTTPStatus: http.StatusUnauthorized,
-			Instance:   "localhost:8080/v1/auth/login",
+			Instance:   "https://delicias-da-lu-514609008596.southamerica-east1.run.app/v1/auth/login",
 			Severity:   problemdetails.Err,
 		})
 	}
@@ -56,7 +56,7 @@ func (a authUseCaseImpl) Login(ctx context.Context, username, password string) (
 			Title:      "Invalid Credentials",
 			Detail:     "The provided username or password is incorrect",
 			HTTPStatus: http.StatusUnauthorized,
-			Instance:   "localhost:8080/v1/auth/login",
+			Instance:   "https://delicias-da-lu-514609008596.southamerica-east1.run.app/v1/auth/login",
 			Severity:   problemdetails.Err,
 		})
 	}
@@ -95,7 +95,7 @@ func (a authUseCaseImpl) RefreshToken(ctx context.Context, tokenString string) (
 			Title:      "Invalid Token",
 			Detail:     "The provided token is invalid or expired",
 			HTTPStatus: http.StatusUnauthorized,
-			Instance:   "localhost:8080/v1/auth/refresh",
+			Instance:   "https://delicias-da-lu-514609008596.southamerica-east1.run.app/v1/auth/refresh",
 			Severity:   problemdetails.Err,
 		})
 	}
@@ -122,7 +122,7 @@ func (a authUseCaseImpl) ValidateToken(ctx context.Context, tokenString string) 
 			Title:      "Invalid Token",
 			Detail:     "The provided token is invalid or expired",
 			HTTPStatus: http.StatusUnauthorized,
-			Instance:   "localhost:8080/v1/auth",
+			Instance:   "https://delicias-da-lu-514609008596.southamerica-east1.run.app/v1/auth",
 			Severity:   problemdetails.Err,
 		})
 	}

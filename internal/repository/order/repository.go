@@ -77,7 +77,7 @@ func (r orderRepositoryImpl) GetByID(ctx context.Context, id string) (*order.Ord
 				Title:      "Order Not Found",
 				Detail:     fmt.Sprintf("No order found with ID: %s", id),
 				HTTPStatus: http.StatusNotFound,
-				Instance:   fmt.Sprintf("localhost:8080/v1/orders/%s", id),
+				Instance:   fmt.Sprintf("https://delicias-da-lu-514609008596.southamerica-east1.run.app/v1/orders/%s", id),
 				Severity:   problemdetails.Err,
 			})
 		}

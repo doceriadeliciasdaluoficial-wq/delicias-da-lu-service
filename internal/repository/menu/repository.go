@@ -75,7 +75,7 @@ func (r menuRepositoryImpl) GetByID(ctx context.Context, id string) (*menu.MenuI
 				Title:      "Menu Item Not Found",
 				Detail:     fmt.Sprintf("No menu item found with ID: %s", id),
 				HTTPStatus: http.StatusNotFound,
-				Instance:   fmt.Sprintf("localhost:8080/v1/menu/items/%s", id),
+				Instance:   fmt.Sprintf("https://delicias-da-lu-514609008596.southamerica-east1.run.app/v1/menu/items/%s", id),
 				Severity:   problemdetails.Err,
 			})
 		}
