@@ -75,6 +75,53 @@ type ErrorDetails struct {
 	Pointer string `json:"pointer"`
 }
 
+type frameLocation struct {
+	File string
+	Line int
+	Func string
+}
+
+func resolveFrame(pc uintptr) frameLocation {
+	if pc == 0 {
+		return frameLocation{}
+	}
+
+	fn := runtime.FuncForPC(pc)
+	if fn == nil {
+		return frameLocation{}
+	}
+
+	file, line := fn.FileLine(pc)
+	return frameLocation{
+		File: file,
+		Line: line,
+		Func: fn.Name(),
+	}
+}
+
+func resolveCaller(skip int) frameLocation {
+	pc, file, line, ok := runtime.Caller(skip)
+	if !ok {
+		return frameLocation{}
+	}
+	name := ""
+	if fn := runtime.FuncForPC(pc); fn != nil {
+		name = fn.Name()
+	}
+	return frameLocation{
+		File: file,
+		Line: line,
+		Func: name,
+	}
+}
+
+func originFromStack(pcs []uintptr) frameLocation {
+	if len(pcs) == 0 {
+		return frameLocation{}
+	}
+	return resolveFrame(pcs[0])
+}
+
 func GetStackTrace() []uintptr {
 	pcs := make([]uintptr, 0)
 
@@ -95,8 +142,25 @@ func NewErrorWithStackTrace(err Error) Error {
 
 func ErrorHandler(e *echo.Context, err error) {
 	problemdetailsError := Error{}
+	userID, _ := e.Get("userID").(string)
 	if !errors.As(err, &problemdetailsError) {
-		log.Error().Err(err).Msg("error response handled")
+		origin := originFromStack(problemdetailsError.StackTrace)
+		if origin.File == "" {
+			origin = resolveCaller(1)
+		}
+		caller := resolveCaller(0)
+		log.Error().
+			Err(err).
+			Str("origin_file", origin.File).
+			Int("origin_line", origin.Line).
+			Str("origin_func", origin.Func).
+			Str("caller_file", caller.File).
+			Int("caller_line", caller.Line).
+			Str("caller_func", caller.Func).
+			Str("request_method", e.Request().Method).
+			Str("request_uri", e.Request().RequestURI).
+			Str("user_id", userID).
+			Msg("error response handled")
 		problemdetailsError = Error{
 			Type:       "unexpectedUnhandledError",
 			Title:      "UnexpectedError",
@@ -112,7 +176,27 @@ func ErrorHandler(e *echo.Context, err error) {
 			Err:      err,
 		}
 	} else {
-		log.Error().Err(problemdetailsError).Msg("error response handled")
+		origin := originFromStack(problemdetailsError.StackTrace)
+		if origin.File == "" {
+			origin = resolveCaller(1)
+		}
+		caller := resolveCaller(0)
+		log.Error().
+			Err(problemdetailsError).
+			Str("error_type", problemdetailsError.Type).
+			Str("error_title", problemdetailsError.Title).
+			Str("error_instance", problemdetailsError.Instance).
+			Int("status", problemdetailsError.HTTPStatus).
+			Str("origin_file", origin.File).
+			Int("origin_line", origin.Line).
+			Str("origin_func", origin.Func).
+			Str("caller_file", caller.File).
+			Int("caller_line", caller.Line).
+			Str("caller_func", caller.Func).
+			Str("request_method", e.Request().Method).
+			Str("request_uri", e.Request().RequestURI).
+			Str("user_id", userID).
+			Msg("error response handled")
 	}
 
 	if problemdetailsError.HTTPStatus == 0 {

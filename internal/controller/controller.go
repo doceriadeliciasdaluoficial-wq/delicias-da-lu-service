@@ -39,8 +39,10 @@ type apiServerImpl struct {
 }
 
 func NewAPIServer() APIServer {
+	server := echo.New()
+	server.Use(middleware.RequestLogger())
 	return apiServerImpl{
-		server: echo.New(),
+		server: server,
 	}
 }
 
