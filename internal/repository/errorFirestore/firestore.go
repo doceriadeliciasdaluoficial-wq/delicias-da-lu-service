@@ -14,6 +14,8 @@ import (
 type ErrorRepository interface {
 	GetTypeOfErrorByIdentifier(ctx context.Context, identifier string) (issue.ErrorType, error)
 	GetInstanceOfErrorByIdentifier(ctx context.Context, identifier string) (issue.ErrorInstance, error)
+	UpsertErrorType(ctx context.Context, identifier string, errorType issue.ErrorType) error
+	CreateErrorInstance(ctx context.Context, identifier string, errorInstance issue.ErrorInstance) error
 }
 
 type errorRepositoryImple struct {
@@ -91,4 +93,26 @@ func (ref errorRepositoryImple) GetInstanceOfErrorByIdentifier(ctx context.Conte
 	}
 
 	return errorInstance, nil
+}
+
+func (ref errorRepositoryImple) UpsertErrorType(ctx context.Context, identifier string, errorType issue.ErrorType) error {
+	docRef := ref.client.Collection("types").Doc(identifier)
+
+	snapshot, err := docRef.Get(ctx)
+	if err == nil {
+		var existing issue.ErrorType
+		if err := snapshot.DataTo(&existing); err == nil && existing.Html != "" {
+			return nil
+		}
+	} else if status.Code(err) != codes.NotFound {
+		return err
+	}
+
+	_, err = docRef.Set(ctx, errorType, firestore.MergeAll)
+	return err
+}
+
+func (ref errorRepositoryImple) CreateErrorInstance(ctx context.Context, identifier string, errorInstance issue.ErrorInstance) error {
+	_, err := ref.client.Collection("instances").Doc(identifier).Set(ctx, errorInstance)
+	return err
 }

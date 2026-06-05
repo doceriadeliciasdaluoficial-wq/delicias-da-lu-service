@@ -11,6 +11,7 @@ type ErrorInstance struct {
 	TraceID     string    `firestore:"trace_id" json:"trace_id"`
 	Type        string    `firestore:"type" json:"type"`
 	UserAgent   string    `firestore:"user_agent" json:"user_agent"`
+	Html        string    `firestore:"html" json:"html"`
 }
 
 type ErrorType struct {

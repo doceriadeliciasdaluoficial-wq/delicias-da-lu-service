@@ -12,9 +12,12 @@ import (
 	healthController "delicias-da-lu-service.com/mod/internal/controller/health"
 	menuController "delicias-da-lu-service.com/mod/internal/controller/menu"
 	orderController "delicias-da-lu-service.com/mod/internal/controller/order"
+	systemController "delicias-da-lu-service.com/mod/internal/controller/system"
+	"delicias-da-lu-service.com/mod/internal/platform/problemdetails"
 	repoCakeBuilder "delicias-da-lu-service.com/mod/internal/repository/cakebuilder"
 	repoConfig "delicias-da-lu-service.com/mod/internal/repository/config"
 	repoContact "delicias-da-lu-service.com/mod/internal/repository/contact"
+	repoError "delicias-da-lu-service.com/mod/internal/repository/errorFirestore"
 	repoMenu "delicias-da-lu-service.com/mod/internal/repository/menu"
 	repoOrder "delicias-da-lu-service.com/mod/internal/repository/order"
 	repoUser "delicias-da-lu-service.com/mod/internal/repository/user"
@@ -22,6 +25,7 @@ import (
 	"delicias-da-lu-service.com/mod/internal/usecase/cakebuilder"
 	"delicias-da-lu-service.com/mod/internal/usecase/config"
 	"delicias-da-lu-service.com/mod/internal/usecase/contact"
+	"delicias-da-lu-service.com/mod/internal/usecase/errorList"
 	"delicias-da-lu-service.com/mod/internal/usecase/menu"
 	"delicias-da-lu-service.com/mod/internal/usecase/order"
 
@@ -52,6 +56,7 @@ func main() {
 	contactRepository := repoContact.NewContactRepository(client)
 	orderRepository := repoOrder.NewOrderRepository(client)
 	configRepository := repoConfig.NewConfigRepository(client)
+	errorRepository := repoError.NewErrorRepository(client)
 
 	// Initialize use cases
 	jwtSecret := os.Getenv("JWT_SECRET")
@@ -65,6 +70,13 @@ func main() {
 	contactUseCase := contact.NewContactUseCase(contactRepository)
 	orderUseCase := order.NewOrderUseCase(orderRepository)
 	configUseCase := config.NewConfigUseCase(configRepository)
+	errorListUseCase := errorList.NewErrorListUseCase(errorRepository)
+	errorRecorder := errorList.NewErrorRecorder(errorRepository)
+
+	problemdetails.SetErrorRecorder(errorRecorder)
+	if err := errorListUseCase.SeedErrorTypes(ctx); err != nil {
+		log.Warn().Err(err).Msg("Failed to seed error types")
+	}
 
 	// Initialize handlers
 	healthHandler := healthController.NewHealthHandler()
@@ -74,6 +86,7 @@ func main() {
 	contactHandler := contactController.NewContactHandler(contactUseCase)
 	orderHandler := orderController.NewOrderHandler(orderUseCase)
 	configHandler := configController.NewConfigHandler(configUseCase)
+	systemHandler := systemController.NewHandler(errorListUseCase)
 
 	// Initialize API server
 	server := controller.NewAPIServer()
@@ -88,6 +101,7 @@ func main() {
 		contactHandler,
 		configHandler,
 		orderHandler,
+		systemHandler,
 	); err != nil {
 		log.Fatal().Err(err).Msg("Failed to register routes")
 	}

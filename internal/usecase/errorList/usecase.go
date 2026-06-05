@@ -10,6 +10,8 @@ import (
 type ErrorListUseCase interface {
 	GetTypeOfErrorByIdentifier(context.Context, string) (string, error)
 	GetInstanceOfErrorByIdentifier(context.Context, string) (issue.ErrorInstance, error)
+	GetInstanceHTMLByIdentifier(context.Context, string) (string, error)
+	SeedErrorTypes(context.Context) error
 }
 
 type errorListUseCaseImpl struct {
@@ -32,4 +34,12 @@ func (ref errorListUseCaseImpl) GetTypeOfErrorByIdentifier(ctx context.Context, 
 
 func (ref errorListUseCaseImpl) GetInstanceOfErrorByIdentifier(ctx context.Context, identifier string) (issue.ErrorInstance, error) {
 	return ref.errorRepository.GetInstanceOfErrorByIdentifier(ctx, identifier)
+}
+
+func (ref errorListUseCaseImpl) GetInstanceHTMLByIdentifier(ctx context.Context, identifier string) (string, error) {
+	instance, err := ref.errorRepository.GetInstanceOfErrorByIdentifier(ctx, identifier)
+	if err != nil {
+		return "", err
+	}
+	return instance.Html, nil
 }

@@ -242,6 +242,44 @@ paths:
                     type: string
                     example: "ok"
 
+  /error:
+    get:
+      summary: Retorna documentação de erro em HTML
+      tags: [System]
+      parameters:
+        - name: filter
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [type, instance]
+          description: Escolhe se retorna HTML do tipo ou da instância do erro
+        - name: identifier
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Identificador do tipo ou instância do erro
+      responses:
+        200:
+          description: Conteúdo HTML do erro
+          content:
+            text/html:
+              schema:
+                type: string
+        400:
+          description: Parâmetros inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        404:
+          description: Erro não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   /auth/login:
     post:
       summary: Autentica usuário admin

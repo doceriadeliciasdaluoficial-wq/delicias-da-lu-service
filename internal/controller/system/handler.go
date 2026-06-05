@@ -51,12 +51,12 @@ func (ref handlerImpl) GetError(e *echo.Context) error {
 		}
 		return e.HTML(http.StatusOK, content)
 	case "instance":
-		errorInstance, err := ref.errorUsecase.GetInstanceOfErrorByIdentifier(e.Request().Context(), identifierQueryParameter)
+		htmlContent, err := ref.errorUsecase.GetInstanceHTMLByIdentifier(e.Request().Context(), identifierQueryParameter)
 		if err != nil {
 			log.Error().Err(err).Msg("error fetching error instance")
 			return err
 		}
-		return e.JSON(http.StatusOK, errorInstance)
+		return e.HTML(http.StatusOK, htmlContent)
 	default:
 		log.Warn().Str("filter", filterQueryParameter).Msg("invalid filter query parameter")
 		return problemdetails.NewErrorWithStackTrace(problemdetails.Error{

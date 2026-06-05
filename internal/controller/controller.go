@@ -8,6 +8,7 @@ import (
 	"delicias-da-lu-service.com/mod/internal/controller/health"
 	"delicias-da-lu-service.com/mod/internal/controller/menu"
 	"delicias-da-lu-service.com/mod/internal/controller/order"
+	"delicias-da-lu-service.com/mod/internal/controller/system"
 	"delicias-da-lu-service.com/mod/internal/platform/middleware"
 	"delicias-da-lu-service.com/mod/internal/platform/problemdetails"
 	authUsecase "delicias-da-lu-service.com/mod/internal/usecase/auth"
@@ -29,6 +30,7 @@ type APIServer interface {
 		contactHandler contact.ContactHandler,
 		configHandler config.ConfigHandler,
 		orderHandler order.OrderHandler,
+		systemHandler system.Handler,
 	) error
 }
 
@@ -61,11 +63,15 @@ func (ref apiServerImpl) RegisterRoutes(
 	contactHandler contact.ContactHandler,
 	configHandler config.ConfigHandler,
 	orderHandler order.OrderHandler,
+	systemHandler system.Handler,
 ) error {
 	v1 := ref.server.Group("/v1")
 
 	// Health check
 	v1.GET("/health", healthHandler.Check)
+
+	// Error documentation
+	v1.GET("/error", systemHandler.GetError)
 
 	// Auth endpoints
 	v1.POST("/auth/login", authHandler.Login)
