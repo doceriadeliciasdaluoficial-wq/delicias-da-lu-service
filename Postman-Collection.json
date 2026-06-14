@@ -280,7 +280,7 @@
       "name": "Authentication",
       "item": [
         {
-          "name": "Login - Valid Credentials",
+          "name": "Login - Valid Credentials (SHA256 Password Hash)",
           "request": {
             "method": "POST",
             "header": [
@@ -291,7 +291,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"username\": \"juliosshoji\",\n  \"password\": \"password123\"\n}"
+              "raw": "{\n  \"username\": \"juliosshoji\",\n  \"passwordHash\": \"8d969eef6ecad3c29a3a873fba8fe814ea412bfce19db27c81052fe959408b8515\"\n}\n\nNote: passwordHash is SHA256 of 'password123'\nGenerate using: sha256(password).hexdigest() in Python\nor crypto.createHash('sha256').update(password).digest('hex') in Node.js"
             },
             "url": {
               "raw": "{{baseUrl}}/auth/login",
@@ -312,7 +312,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"username\": \"invalid_user\",\n  \"password\": \"wrong_password\"\n}"
+              "raw": "{\n  \"username\": \"invalid_user\",\n  \"passwordHash\": \"000000000000000000000000000000000000000000000000000000000000000\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/auth/login",
