@@ -37,7 +37,6 @@ func main() {
 	logger := log.With().Str("component", "bootstrap").Logger()
 	ctx := context.Background()
 
-	// Initialize Firestore client
 	projectID := os.Getenv("GCP_PROJECT_ID")
 	if projectID == "" {
 		projectID = "project-4419255d-5de2-41f6-82b"
@@ -51,7 +50,6 @@ func main() {
 
 	logger.Info().Str("project_id", projectID).Msg("firestore client initialized")
 
-	// Initialize repositories
 	userRepository := repoUser.NewUserRepository(client)
 	menuRepository := repoMenu.NewMenuRepository(client)
 	cakeBuilderRepository := repoCakeBuilder.NewCakeBuilderRepository(client)
@@ -60,10 +58,9 @@ func main() {
 	configRepository := repoConfig.NewConfigRepository(client)
 	errorRepository := repoError.NewErrorRepository(client)
 
-	// Initialize use cases
 	jwtSecret := os.Getenv("JWT_SECRET")
 	if jwtSecret == "" {
-		jwtSecret = "your-secret-key-change-in-production" // Change in production!
+		jwtSecret = "your-secret-key-change-in-production"
 	}
 
 	authUseCase := auth.NewAuthUseCase(userRepository, jwtSecret)
@@ -80,7 +77,6 @@ func main() {
 		logger.Warn().Err(err).Msg("failed to seed error types")
 	}
 
-	// Initialize handlers
 	healthHandler := healthController.NewHealthHandler()
 	authHandler := authController.NewAuthHandler(authUseCase)
 	menuHandler := menuController.NewMenuHandler(menuUseCase)

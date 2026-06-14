@@ -70,17 +70,12 @@ func (ref apiServerImpl) RegisterRoutes(
 ) error {
 	v1 := ref.server.Group("/v1")
 
-	// Health check
 	v1.GET("/health", healthHandler.Check)
-
-	// Error documentation
 	v1.GET("/error", systemHandler.GetError)
 
-	// Auth endpoints
 	v1.POST("/auth/login", authHandler.Login)
 	v1.POST("/auth/refresh", authHandler.Refresh, middleware.JWTMiddleware(authUseCase))
 
-	// Public config/menu endpoints
 	v1.GET("/config/public", configHandler.GetPublic)
 	v1.GET("/menu/items", menuHandler.GetAll)
 	v1.GET("/menu/items/:id", menuHandler.GetByID)
@@ -89,36 +84,28 @@ func (ref apiServerImpl) RegisterRoutes(
 	v1.GET("/cake-builder/:type/:id", cakeBuilderHandler.GetByID)
 	v1.GET("/contacts", contactHandler.Get)
 
-	// Order endpoints (public for creation, admin for listing)
 	v1.POST("/orders", orderHandler.Create)
 	v1.GET("/orders/:id", orderHandler.GetByID)
 
-	// Admin protected endpoints
 	adminGroup := v1.Group("", middleware.JWTMiddleware(authUseCase))
 
-	// Config admin endpoints
 	adminGroup.GET("/config/admin", configHandler.GetAdmin)
 	adminGroup.PUT("/config/admin", configHandler.Update)
 
-	// Menu admin endpoints
 	adminGroup.POST("/menu/items", menuHandler.Create)
 	adminGroup.PUT("/menu/items/:id", menuHandler.Update)
 	adminGroup.DELETE("/menu/items/:id", menuHandler.Delete)
 	adminGroup.PATCH("/menu/items/:id/order", menuHandler.UpdateOrder)
 
-	// CakeBuilder admin endpoints
 	adminGroup.POST("/cake-builder/:type", cakeBuilderHandler.Create)
 	adminGroup.PUT("/cake-builder/:type/:id", cakeBuilderHandler.Update)
 	adminGroup.DELETE("/cake-builder/:type/:id", cakeBuilderHandler.Delete)
 
-	// Contacts admin endpoints
 	adminGroup.PUT("/contacts", contactHandler.Update)
 
-	// Orders admin endpoints
 	adminGroup.GET("/orders", orderHandler.GetAll)
 	adminGroup.PUT("/orders/:id", orderHandler.UpdateStatus)
 
-	// Error types management (admin)
 	adminGroup.POST("/admin/error-types", systemHandler.CreateErrorTypes)
 	adminGroup.DELETE("/admin/error-types/:identifier", systemHandler.DeleteErrorType)
 
