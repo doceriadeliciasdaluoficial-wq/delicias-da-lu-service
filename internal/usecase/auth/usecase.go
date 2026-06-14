@@ -33,7 +33,6 @@ func NewAuthUseCase(userRepository userRepo.UserRepository, jwtSecret string) Au
 }
 
 func (a authUseCaseImpl) Login(ctx context.Context, username, password string) (*user.LoginResponse, error) {
-	// Get user by username
 	usr, err := a.userRepository.GetByUsername(ctx, username)
 	if err != nil {
 		logging.WarnEvent(ctx).
@@ -50,9 +49,7 @@ func (a authUseCaseImpl) Login(ctx context.Context, username, password string) (
 		})
 	}
 
-	// Compare passwords (simple hash comparison - in production use bcrypt)
-	passwordHash := hashPassword(password)
-	if usr.Password != passwordHash {
+	if usr.Password != password {
 		logging.WarnEvent(ctx).
 			Str("username", username).
 			Msg("invalid password")
@@ -66,14 +63,12 @@ func (a authUseCaseImpl) Login(ctx context.Context, username, password string) (
 		})
 	}
 
-	// Update last login
 	if err := a.userRepository.UpdateLastLogin(ctx, usr.ID); err != nil {
 		logging.ErrorEvent(ctx, err).
 			Str("user_id", usr.ID).
 			Msg("failed to update last login")
 	}
 
-	// Generate JWT token
 	token, err := a.generateToken(usr.ID)
 	if err != nil {
 		logging.ErrorEvent(ctx, err).
@@ -82,7 +77,6 @@ func (a authUseCaseImpl) Login(ctx context.Context, username, password string) (
 		return nil, err
 	}
 
-	// Remove password from response
 	usr.Password = ""
 
 	return &user.LoginResponse{
@@ -92,7 +86,6 @@ func (a authUseCaseImpl) Login(ctx context.Context, username, password string) (
 }
 
 func (a authUseCaseImpl) RefreshToken(ctx context.Context, tokenString string) (string, error) {
-	// Validate and extract claims from existing token
 	claims := &jwt.MapClaims{}
 	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
 		return []byte(a.jwtSecret), nil
@@ -109,7 +102,6 @@ func (a authUseCaseImpl) RefreshToken(ctx context.Context, tokenString string) (
 		})
 	}
 
-	// Extract user ID and generate new token
 	userID := (*claims)["sub"].(string)
 	newToken, err := a.generateToken(userID)
 	if err != nil {

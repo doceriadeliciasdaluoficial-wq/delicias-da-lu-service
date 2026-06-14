@@ -40,7 +40,7 @@ func (h authHandlerImpl) Login(c *echo.Context) error {
 		Str("username", req.Username).
 		Msg("auth login requested")
 
-	response, err := h.authUseCase.Login(c.Request().Context(), req.Username, req.Password)
+	response, err := h.authUseCase.Login(c.Request().Context(), req.Username, req.PasswordHash)
 	if err != nil {
 		return err
 	}
@@ -59,7 +59,6 @@ func (h authHandlerImpl) Refresh(c *echo.Context) error {
 		})
 	}
 
-	// Extract token (assuming "Bearer <token>" format)
 	parts := strings.Split(authHeader, " ")
 	if len(parts) != 2 || parts[0] != "Bearer" {
 		logging.WarnEventFromEcho(c).
