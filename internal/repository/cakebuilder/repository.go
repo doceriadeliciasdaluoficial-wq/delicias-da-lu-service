@@ -36,7 +36,6 @@ func (r cakeBuilderRepositoryImpl) GetByType(ctx context.Context, componentType 
 	var components []cakebuilder.CakeBuilderComponent
 	coll := r.client.Collection("cakeBuilder")
 
-	// Get all documents and filter in memory
 	docs, err := coll.OrderBy("order", firestore.Asc).Documents(ctx).GetAll()
 	if err != nil {
 		return nil, err
@@ -48,7 +47,6 @@ func (r cakeBuilderRepositoryImpl) GetByType(ctx context.Context, componentType 
 			return nil, err
 		}
 
-		// Apply filters
 		if component.Type != componentType {
 			continue
 		}

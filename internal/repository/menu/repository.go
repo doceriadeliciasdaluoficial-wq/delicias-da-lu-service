@@ -36,20 +36,17 @@ func (r menuRepositoryImpl) GetAll(ctx context.Context, active *bool, category s
 	var items []menu.MenuItem
 	coll := r.client.Collection("menu")
 
-	// Get all documents ordered by creation date
 	docs, err := coll.OrderBy("order", firestore.Asc).Documents(ctx).GetAll()
 	if err != nil {
 		return nil, err
 	}
 
-	// Filter results in memory
 	for _, doc := range docs {
 		var item menu.MenuItem
 		if err := doc.DataTo(&item); err != nil {
 			return nil, err
 		}
 
-		// Check filters
 		skip := false
 		if active != nil && item.Active != *active {
 			skip = true

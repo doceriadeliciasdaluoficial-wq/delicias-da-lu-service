@@ -34,7 +34,6 @@ func (r orderRepositoryImpl) GetAll(ctx context.Context, orderStatus string, lim
 	var orders []order.Order
 	coll := r.client.Collection("orders")
 
-	// Get all documents ordered by creation date
 	docs, err := coll.OrderBy("createdAt", firestore.Desc).Documents(ctx).GetAll()
 	if err != nil {
 		return nil, err
@@ -47,14 +46,12 @@ func (r orderRepositoryImpl) GetAll(ctx context.Context, orderStatus string, lim
 			return nil, err
 		}
 
-		// Filter by status if provided
 		if orderStatus != "" && ord.Status != orderStatus {
 			continue
 		}
 
 		total++
 
-		// Apply pagination
 		if total > offset && total <= (offset+limit) {
 			orders = append(orders, ord)
 		}
