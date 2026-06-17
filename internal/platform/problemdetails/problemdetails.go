@@ -56,20 +56,18 @@ type Error struct {
 
 	Instance string `json:"instance"`
 
-	// Origin information: where the error was generated
-	OriginFile string `json:"origin_file,omitempty"`
-	OriginLine int    `json:"origin_line,omitempty"`
-	OriginFunc string `json:"origin_func,omitempty"`
+	OriginFile string `json:"-"`
+	OriginLine int    `json:"-"`
+	OriginFunc string `json:"-"`
 
-	// Caller information: where ErrorHandler was invoked
-	CallerFile string `json:"caller_file,omitempty"`
-	CallerLine int    `json:"caller_line,omitempty"`
-	CallerFunc string `json:"caller_func,omitempty"`
+	CallerFile string `json:"-"`
+	CallerLine int    `json:"-"`
+	CallerFunc string `json:"-"`
 
 	StackTrace []uintptr `json:"-"`
 	Severity   int       `json:"-"`
 
-	Err error `json:"internal,omitempty"`
+	Err error `json:"-"`
 }
 
 func (ref Error) Error() string {
