@@ -52,8 +52,8 @@ components:
           description: Unit of measurement (e.g., "kg", "unidade")
         image:
           type: string
-          example: "/images/bolos/frutas-abacaxi-creme.jpg"
-          description: Image path relative to CDN
+          example: "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEA..."
+          description: Base64-encoded image string
         description:
           type: string
           example: "Soft cake with layers of fresh pineapple and cream"
@@ -100,8 +100,8 @@ components:
           description: Price per unit
         image:
           type: string
-          example: "/images/cake-builder/massas/chocolate.jpg"
-          description: Component image
+          example: "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEA..."
+          description: Base64-encoded component image
         active:
           type: boolean
           example: true
@@ -161,8 +161,8 @@ components:
           description: Detailed description
         image:
           type: string
-          example: "/images/home/ninho-nutella.jpg"
-          description: Image path
+          example: "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEA..."
+          description: Base64-encoded image
         order:
           type: integer
           example: 1
