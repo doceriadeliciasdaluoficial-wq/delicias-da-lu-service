@@ -35,6 +35,13 @@ func (h contactHandlerImpl) Get(c *echo.Context) error {
 	return c.JSON(http.StatusOK, cnt)
 }
 
+func getInstagramHandle(ig contact.InstagramInfo) string {
+	if ig.Handle != nil {
+		return *ig.Handle
+	}
+	return ""
+}
+
 func (h contactHandlerImpl) Update(c *echo.Context) error {
 	var cnt contact.Contact
 	if err := c.Bind(&cnt); err != nil {
@@ -47,8 +54,8 @@ func (h contactHandlerImpl) Update(c *echo.Context) error {
 	}
 
 	logging.DebugEventFromEcho(c).
-		Str("email", cnt.Email).
-		Str("instagram", cnt.Instagram).
+		Str("email", cnt.Email.Address).
+		Str("instagram", getInstagramHandle(cnt.Instagram)).
 		Msg("contacts update requested")
 
 	updated, err := h.contactUseCase.Update(c.Request().Context(), &cnt)

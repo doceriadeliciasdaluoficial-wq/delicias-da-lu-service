@@ -7,6 +7,7 @@ import (
 )
 
 type SiteConfig struct {
+	Home        *HomeConfig       `json:"home,omitempty" firestore:"home"`
 	Menu        MenuConfig        `json:"menu" firestore:"menu"`
 	CakeBuilder CakeBuilderConfig `json:"cakeBuilder" firestore:"cakeBuilder"`
 	Contacts    contact.Contact   `json:"contacts" firestore:"contacts"`
