@@ -30,3 +30,9 @@ errorTypes
 # Editor/IDE
 # .idea/
 # .vscode/
+
+# Build outputs and binaries
+/delicias
+/main
+/seed
+/cmd/restructure/

@@ -10,7 +10,6 @@ import (
 	"delicias-da-lu-service.com/mod/internal/controller/menu"
 	"delicias-da-lu-service.com/mod/internal/controller/order"
 	"delicias-da-lu-service.com/mod/internal/controller/system"
-	uploadController "delicias-da-lu-service.com/mod/internal/controller/upload"
 	"delicias-da-lu-service.com/mod/internal/platform/middleware"
 	"delicias-da-lu-service.com/mod/internal/platform/problemdetails"
 	authUsecase "delicias-da-lu-service.com/mod/internal/usecase/auth"
@@ -34,7 +33,6 @@ type APIServer interface {
 		orderHandler order.OrderHandler,
 		systemHandler system.Handler,
 		homeHandler homeController.HomeHandler,
-		uploadHandler uploadController.UploadHandler,
 	) error
 }
 
@@ -73,7 +71,6 @@ func (ref apiServerImpl) RegisterRoutes(
 	orderHandler order.OrderHandler,
 	systemHandler system.Handler,
 	homeHandler homeController.HomeHandler,
-	uploadHandler uploadController.UploadHandler,
 ) error {
 	v1 := ref.server.Group("/v1")
 
@@ -117,9 +114,6 @@ func (ref apiServerImpl) RegisterRoutes(
 	adminGroup.DELETE("/cake-builder/:type/:id", cakeBuilderHandler.Delete)
 
 	adminGroup.PUT("/contacts", contactHandler.Update)
-
-	adminGroup.POST("/upload", uploadHandler.UploadImage)
-	adminGroup.DELETE("/upload", uploadHandler.DeleteImage)
 
 	adminGroup.POST("/home/featured-cakes", homeHandler.CreateFeaturedCake)
 	adminGroup.PUT("/home/featured-cakes/:id", homeHandler.UpdateFeaturedCake)
