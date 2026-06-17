@@ -4,9 +4,7 @@ import (
 	"net/http"
 
 	"delicias-da-lu-service.com/mod/internal/entity/cakebuilder"
-	"delicias-da-lu-service.com/mod/internal/entity/config"
-	"delicias-da-lu-service.com/mod/internal/platform/logging"
-	cakebuildUC "delicias-da-lu-service.com/mod/internal/usecase/cakebuilder"
+	cakeUC "delicias-da-lu-service.com/mod/internal/usecase/cakebuilder"
 	"github.com/labstack/echo/v5"
 )
 
@@ -17,70 +15,50 @@ type CakeBuilderHandler interface {
 	Create(c *echo.Context) error
 	Update(c *echo.Context) error
 	Delete(c *echo.Context) error
+	UpdateOrder(c *echo.Context) error
 }
 
 type cakeBuilderHandlerImpl struct {
-	cakeBuilderUseCase cakebuildUC.CakeBuilderUseCase
+	cakeBuilderUseCase cakeUC.CakeBuilderUseCase
 }
 
-func NewCakeBuilderHandler(cakeBuilderUseCase cakebuildUC.CakeBuilderUseCase) CakeBuilderHandler {
+func NewCakeBuilderHandler(cakeBuilderUseCase cakeUC.CakeBuilderUseCase) CakeBuilderHandler {
 	return cakeBuilderHandlerImpl{
 		cakeBuilderUseCase: cakeBuilderUseCase,
 	}
 }
 
 func (h cakeBuilderHandlerImpl) GetAll(c *echo.Context) error {
-	activeStr := c.QueryParam("active")
-
 	var active *bool
-	if activeStr != "" {
-		val := activeStr == "true"
-		active = &val
+	if c.QueryParam("active") != "" {
+		activeVal := c.QueryParam("active") == "true"
+		active = &activeVal
 	}
 
-	logging.DebugEventFromEcho(c).
-		Str("active", activeStr).
-		Msg("cake builder get all requested")
-
-	components, err := h.cakeBuilderUseCase.GetAll(c.Request().Context(), active)
+	items, err := h.cakeBuilderUseCase.GetAll(c.Request().Context(), active)
 	if err != nil {
-		logging.ErrorEventFromEcho(c, err).
-			Str("active", activeStr).
-			Msg("failed to get cake builder components")
-		return err
+		return c.JSON(http.StatusInternalServerError, map[string]string{
+			"error": err.Error(),
+		})
 	}
 
-	result := &config.CakeBuilderConfig{
-		Massas:     components["massas"],
-		Recheios:   components["recheios"],
-		Coberturas: components["coberturas"],
-		Decoracoes: components["decoracoes"],
-	}
-
-	return c.JSON(http.StatusOK, result)
+	return c.JSON(http.StatusOK, items)
 }
 
 func (h cakeBuilderHandlerImpl) GetByType(c *echo.Context) error {
-	componentType := c.Param("type")
-	activeStr := c.QueryParam("active")
+	cType := c.Param("type")
 
 	var active *bool
-	if activeStr != "" {
-		val := activeStr == "true"
-		active = &val
+	if c.QueryParam("active") != "" {
+		activeVal := c.QueryParam("active") == "true"
+		active = &activeVal
 	}
 
-	logging.DebugEventFromEcho(c).
-		Str("component_type", componentType).
-		Str("active", activeStr).
-		Msg("cake builder get by type requested")
-
-	components, err := h.cakeBuilderUseCase.GetByType(c.Request().Context(), componentType, active)
+	components, err := h.cakeBuilderUseCase.GetByType(c.Request().Context(), cType, active)
 	if err != nil {
-		logging.ErrorEventFromEcho(c, err).
-			Str("component_type", componentType).
-			Msg("failed to get cake builder components by type")
-		return err
+		return c.JSON(http.StatusInternalServerError, map[string]string{
+			"error": err.Error(),
+		})
 	}
 
 	if components == nil {
@@ -91,109 +69,94 @@ func (h cakeBuilderHandlerImpl) GetByType(c *echo.Context) error {
 }
 
 func (h cakeBuilderHandlerImpl) GetByID(c *echo.Context) error {
-	componentType := c.Param("type")
+	cType := c.Param("type")
 	id := c.Param("id")
-	logging.DebugEventFromEcho(c).
-		Str("component_type", componentType).
-		Str("component_id", id).
-		Msg("cake builder get by id requested")
 
-	component, err := h.cakeBuilderUseCase.GetByID(c.Request().Context(), componentType, id)
+	component, err := h.cakeBuilderUseCase.GetByID(c.Request().Context(), cType, id)
 	if err != nil {
-		logging.WarnEventFromEcho(c).
-			Err(err).
-			Str("component_type", componentType).
-			Str("component_id", id).
-			Msg("failed to get cake builder component")
-		return err
+		return c.JSON(http.StatusNotFound, map[string]string{
+			"error": err.Error(),
+		})
 	}
 
 	return c.JSON(http.StatusOK, component)
 }
 
 func (h cakeBuilderHandlerImpl) Create(c *echo.Context) error {
-	componentType := c.Param("type")
+	cType := c.Param("type")
 
 	var component cakebuilder.CakeBuilderComponent
 	if err := c.Bind(&component); err != nil {
-		logging.WarnEventFromEcho(c).
-			Err(err).
-			Str("component_type", componentType).
-			Msg("invalid cake builder payload")
 		return c.JSON(http.StatusBadRequest, map[string]string{
-			"error": "invalid request body",
+			"error": "Invalid request body",
 		})
 	}
 
-	logging.DebugEventFromEcho(c).
-		Str("component_type", componentType).
-		Str("component_name", component.Name).
-		Msg("cake builder create requested")
+	component.Type = cType
 
-	component.Type = componentType
-
-	created, err := h.cakeBuilderUseCase.Create(c.Request().Context(), &component)
+	createdComponent, err := h.cakeBuilderUseCase.Create(c.Request().Context(), cType, &component)
 	if err != nil {
-		logging.ErrorEventFromEcho(c, err).
-			Str("component_type", componentType).
-			Msg("failed to create cake builder component")
-		return err
+		return c.JSON(http.StatusInternalServerError, map[string]string{
+			"error": err.Error(),
+		})
 	}
 
-	return c.JSON(http.StatusCreated, created)
+	return c.JSON(http.StatusCreated, createdComponent)
 }
 
 func (h cakeBuilderHandlerImpl) Update(c *echo.Context) error {
-	componentType := c.Param("type")
+	cType := c.Param("type")
 	id := c.Param("id")
 
 	var component cakebuilder.CakeBuilderComponent
 	if err := c.Bind(&component); err != nil {
-		logging.WarnEventFromEcho(c).
-			Err(err).
-			Str("component_type", componentType).
-			Str("component_id", id).
-			Msg("invalid cake builder payload")
 		return c.JSON(http.StatusBadRequest, map[string]string{
-			"error": "invalid request body",
+			"error": "Invalid request body",
 		})
 	}
 
-	logging.DebugEventFromEcho(c).
-		Str("component_type", componentType).
-		Str("component_id", id).
-		Str("component_name", component.Name).
-		Msg("cake builder update requested")
-
-	component.Type = componentType
-
-	updated, err := h.cakeBuilderUseCase.Update(c.Request().Context(), id, &component)
+	updatedComponent, err := h.cakeBuilderUseCase.Update(c.Request().Context(), cType, id, &component)
 	if err != nil {
-		logging.ErrorEventFromEcho(c, err).
-			Str("component_type", componentType).
-			Str("component_id", id).
-			Msg("failed to update cake builder component")
-		return err
+		return c.JSON(http.StatusNotFound, map[string]string{
+			"error": err.Error(),
+		})
 	}
 
-	return c.JSON(http.StatusOK, updated)
+	return c.JSON(http.StatusOK, updatedComponent)
 }
 
 func (h cakeBuilderHandlerImpl) Delete(c *echo.Context) error {
-	componentType := c.Param("type")
+	cType := c.Param("type")
 	id := c.Param("id")
-	logging.DebugEventFromEcho(c).
-		Str("component_type", componentType).
-		Str("component_id", id).
-		Msg("cake builder delete requested")
 
-	if err := h.cakeBuilderUseCase.Delete(c.Request().Context(), componentType, id); err != nil {
-		logging.ErrorEventFromEcho(c, err).
-			Str("component_type", componentType).
-			Str("component_id", id).
-			Msg("failed to delete cake builder component")
-		return err
+	if err := h.cakeBuilderUseCase.Delete(c.Request().Context(), cType, id); err != nil {
+		return c.JSON(http.StatusNotFound, map[string]string{
+			"error": err.Error(),
+		})
 	}
 
-	return c.NoContent(http.StatusNoContent)
+	return c.JSON(http.StatusNoContent, nil)
+}
+
+func (h cakeBuilderHandlerImpl) UpdateOrder(c *echo.Context) error {
+	cType := c.Param("type")
+	id := c.Param("id")
+
+	var req struct {
+		Order int `json:"order"`
+	}
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"error": "Invalid request body",
+		})
+	}
+
+	component, err := h.cakeBuilderUseCase.UpdateOrder(c.Request().Context(), cType, id, req.Order)
+	if err != nil {
+		return c.JSON(http.StatusNotFound, map[string]string{
+			"error": err.Error(),
+		})
+	}
+
+	return c.JSON(http.StatusOK, component)
 }

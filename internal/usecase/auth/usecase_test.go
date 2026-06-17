@@ -14,6 +14,9 @@ type MockUserRepository struct {
 	GetByIDFunc         func(ctx context.Context, id string) (*user.AdminUser, error)
 	CreateFunc          func(ctx context.Context, usr *user.AdminUser) (*user.AdminUser, error)
 	UpdateLastLoginFunc func(ctx context.Context, userID string) error
+	UpdateFunc          func(ctx context.Context, userID string, usr *user.AdminUser) (*user.AdminUser, error)
+	DeleteFunc          func(ctx context.Context, userID string) error
+	ListAllFunc         func(ctx context.Context) ([]user.AdminUser, error)
 }
 
 func (m *MockUserRepository) GetByUsername(ctx context.Context, username string) (*user.AdminUser, error) {
@@ -42,6 +45,27 @@ func (m *MockUserRepository) UpdateLastLogin(ctx context.Context, userID string)
 		return m.UpdateLastLoginFunc(ctx, userID)
 	}
 	return nil
+}
+
+func (m *MockUserRepository) Update(ctx context.Context, userID string, usr *user.AdminUser) (*user.AdminUser, error) {
+	if m.UpdateFunc != nil {
+		return m.UpdateFunc(ctx, userID, usr)
+	}
+	return nil, errors.New("not implemented")
+}
+
+func (m *MockUserRepository) Delete(ctx context.Context, userID string) error {
+	if m.DeleteFunc != nil {
+		return m.DeleteFunc(ctx, userID)
+	}
+	return nil
+}
+
+func (m *MockUserRepository) ListAll(ctx context.Context) ([]user.AdminUser, error) {
+	if m.ListAllFunc != nil {
+		return m.ListAllFunc(ctx)
+	}
+	return nil, errors.New("not implemented")
 }
 
 func TestAuthUseCaseLogin(t *testing.T) {

@@ -15,25 +15,33 @@ import (
 
 type UserRepository interface {
 	GetByUsername(ctx context.Context, username string) (*user.AdminUser, error)
-	GetByID(ctx context.Context, id string) (*user.AdminUser, error)
-	Create(ctx context.Context, usr *user.AdminUser) (*user.AdminUser, error)
-	UpdateLastLogin(ctx context.Context, id string) error
+	GetByID(ctx context.Context, userID string) (*user.AdminUser, error)
+	Create(ctx context.Context, adminUser *user.AdminUser) (*user.AdminUser, error)
+	Update(ctx context.Context, userID string, adminUser *user.AdminUser) (*user.AdminUser, error)
+	UpdateLastLogin(ctx context.Context, userID string) error
+	Delete(ctx context.Context, userID string) error
+	ListAll(ctx context.Context) ([]user.AdminUser, error)
 }
 
 type userRepositoryImpl struct {
 	client *firestore.Client
 }
 
+const adminCollection = "admin"
+const usersSubcollection = "users"
+
 func NewUserRepository(client *firestore.Client) UserRepository {
-	return userRepositoryImpl{
-		client: client,
-	}
+	return &userRepositoryImpl{client: client}
 }
 
-func (r userRepositoryImpl) GetByUsername(ctx context.Context, username string) (*user.AdminUser, error) {
-	docs, err := r.client.Collection("users").Where("username", "==", username).Documents(ctx).GetAll()
+func (r *userRepositoryImpl) GetByUsername(ctx context.Context, username string) (*user.AdminUser, error) {
+	docs, err := r.client.Collection(adminCollection).Doc("default").Collection(usersSubcollection).
+		Where("username", "==", username).
+		Documents(ctx).
+		GetAll()
+
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to fetch user: %w", err)
 	}
 
 	if len(docs) == 0 {
@@ -47,53 +55,123 @@ func (r userRepositoryImpl) GetByUsername(ctx context.Context, username string) 
 		})
 	}
 
-	var usr user.AdminUser
-	if err := docs[0].DataTo(&usr); err != nil {
+	var adminUser user.AdminUser
+	if err := docs[0].DataTo(&adminUser); err != nil {
 		return nil, err
 	}
 
-	return &usr, nil
+	return &adminUser, nil
 }
 
-func (r userRepositoryImpl) GetByID(ctx context.Context, id string) (*user.AdminUser, error) {
-	doc, err := r.client.Collection("users").Doc(id).Get(ctx)
+func (r *userRepositoryImpl) GetByID(ctx context.Context, userID string) (*user.AdminUser, error) {
+	doc, err := r.client.Collection(adminCollection).Doc("default").Collection(usersSubcollection).Doc(userID).Get(ctx)
+
 	if err != nil {
 		if status.Code(err) == codes.NotFound {
 			return nil, problemdetails.NewErrorWithStackTrace(problemdetails.Error{
 				Type:       "https://delicias-da-lu-service.com/docs/errors/not-found",
 				Title:      "User Not Found",
-				Detail:     fmt.Sprintf("No user found with ID: %s", id),
+				Detail:     fmt.Sprintf("No user found with ID: %s", userID),
 				HTTPStatus: http.StatusNotFound,
-				Instance:   fmt.Sprintf("https://delicias-da-lu-514609008596.southamerica-east1.run.app/v1/users/%s", id),
+				Instance:   "https://delicias-da-lu-514609008596.southamerica-east1.run.app/v1/auth",
 				Severity:   problemdetails.Err,
 			})
 		}
 		return nil, err
 	}
 
-	var usr user.AdminUser
-	if err := doc.DataTo(&usr); err != nil {
+	var adminUser user.AdminUser
+	if err := doc.DataTo(&adminUser); err != nil {
 		return nil, err
 	}
 
-	return &usr, nil
+	return &adminUser, nil
 }
 
-func (r userRepositoryImpl) Create(ctx context.Context, usr *user.AdminUser) (*user.AdminUser, error) {
-	usr.CreatedAt = time.Now()
-	usr.UpdatedAt = time.Now()
+func (r *userRepositoryImpl) Create(ctx context.Context, adminUser *user.AdminUser) (*user.AdminUser, error) {
+	if _, err := r.client.Collection(adminCollection).Doc("default").Get(ctx); err != nil {
+		if status.Code(err) == codes.NotFound {
+			if _, err := r.client.Collection(adminCollection).Doc("default").Set(ctx, map[string]interface{}{
+				"createdAt": time.Now(),
+				"updatedAt": time.Now(),
+			}); err != nil {
+				return nil, err
+			}
+		} else {
+			return nil, err
+		}
+	}
 
-	_, err := r.client.Collection("users").Doc(usr.ID).Set(ctx, usr)
+	adminUser.CreatedAt = time.Now()
+	adminUser.UpdatedAt = time.Now()
+	now := time.Now()
+	adminUser.LastLogin = now
+
+	_, err := r.client.Collection(adminCollection).Doc("default").Collection(usersSubcollection).Doc(adminUser.ID).Set(ctx, adminUser)
 	if err != nil {
 		return nil, err
 	}
 
-	return usr, nil
+	return adminUser, nil
 }
 
-func (r userRepositoryImpl) UpdateLastLogin(ctx context.Context, id string) error {
-	_, err := r.client.Collection("users").Doc(id).Update(ctx, []firestore.Update{
-		{Path: "lastLogin", Value: time.Now()},
-	})
+func (r *userRepositoryImpl) Update(ctx context.Context, userID string, adminUser *user.AdminUser) (*user.AdminUser, error) {
+	existing, err := r.GetByID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	adminUser.ID = userID
+	adminUser.CreatedAt = existing.CreatedAt
+	adminUser.UpdatedAt = time.Now()
+
+	_, err = r.client.Collection(adminCollection).Doc("default").Collection(usersSubcollection).Doc(userID).Set(ctx, adminUser)
+	if err != nil {
+		return nil, err
+	}
+
+	return adminUser, nil
+}
+
+func (r *userRepositoryImpl) UpdateLastLogin(ctx context.Context, userID string) error {
+	existing, err := r.GetByID(ctx, userID)
+	if err != nil {
+		return err
+	}
+
+	now := time.Now()
+	existing.LastLogin = now
+	existing.UpdatedAt = time.Now()
+
+	_, err = r.client.Collection(adminCollection).Doc("default").Collection(usersSubcollection).Doc(userID).Set(ctx, existing)
 	return err
+}
+
+func (r *userRepositoryImpl) Delete(ctx context.Context, userID string) error {
+	_, err := r.GetByID(ctx, userID)
+	if err != nil {
+		return err
+	}
+
+	_, err = r.client.Collection(adminCollection).Doc("default").Collection(usersSubcollection).Doc(userID).Delete(ctx)
+	return err
+}
+
+func (r *userRepositoryImpl) ListAll(ctx context.Context) ([]user.AdminUser, error) {
+	var users []user.AdminUser
+
+	docs, err := r.client.Collection(adminCollection).Doc("default").Collection(usersSubcollection).Documents(ctx).GetAll()
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch users: %w", err)
+	}
+
+	for _, doc := range docs {
+		var adminUser user.AdminUser
+		if err := doc.DataTo(&adminUser); err != nil {
+			return nil, err
+		}
+		users = append(users, adminUser)
+	}
+
+	return users, nil
 }

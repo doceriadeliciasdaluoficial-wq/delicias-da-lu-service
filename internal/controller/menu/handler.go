@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"delicias-da-lu-service.com/mod/internal/entity/menu"
-	"delicias-da-lu-service.com/mod/internal/platform/logging"
 	menuUC "delicias-da-lu-service.com/mod/internal/usecase/menu"
 	"github.com/labstack/echo/v5"
 )
@@ -29,27 +28,19 @@ func NewMenuHandler(menuUseCase menuUC.MenuUseCase) MenuHandler {
 }
 
 func (h menuHandlerImpl) GetAll(c *echo.Context) error {
-	category := c.QueryParam("category")
-	activeStr := c.QueryParam("active")
-
 	var active *bool
-	if activeStr != "" {
-		val := activeStr == "true"
-		active = &val
+	if c.QueryParam("active") != "" {
+		activeVal := c.QueryParam("active") == "true"
+		active = &activeVal
 	}
 
-	logging.DebugEventFromEcho(c).
-		Str("category", category).
-		Str("active", activeStr).
-		Msg("menu get all requested")
+	category := c.QueryParam("category")
 
 	items, err := h.menuUseCase.GetAll(c.Request().Context(), active, category)
 	if err != nil {
-		logging.ErrorEventFromEcho(c, err).
-			Str("category", category).
-			Str("active", activeStr).
-			Msg("failed to get menu items")
-		return err
+		return c.JSON(http.StatusInternalServerError, map[string]string{
+			"error": err.Error(),
+		})
 	}
 
 	if items == nil {
@@ -57,131 +48,97 @@ func (h menuHandlerImpl) GetAll(c *echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, items)
-
 }
-func (h menuHandlerImpl) GetByID(c *echo.Context) error {
-	id := c.Param("id")
-	logging.DebugEventFromEcho(c).
-		Str("menu_item_id", id).
-		Msg("menu get by id requested")
 
-	item, err := h.menuUseCase.GetByID(c.Request().Context(), id)
+func (h menuHandlerImpl) GetByID(c *echo.Context) error {
+	categoryID := c.Param("category")
+	itemID := c.Param("id")
+
+	item, err := h.menuUseCase.GetByID(c.Request().Context(), categoryID, itemID)
 	if err != nil {
-		logging.WarnEventFromEcho(c).
-			Err(err).
-			Str("menu_item_id", id).
-			Msg("failed to get menu item")
-		return err
+		return c.JSON(http.StatusNotFound, map[string]string{
+			"error": err.Error(),
+		})
 	}
 
 	return c.JSON(http.StatusOK, item)
-
 }
+
 func (h menuHandlerImpl) Create(c *echo.Context) error {
+	categoryID := c.Param("category")
+
 	var item menu.MenuItem
 	if err := c.Bind(&item); err != nil {
-		logging.WarnEventFromEcho(c).
-			Err(err).
-			Msg("invalid menu item payload")
 		return c.JSON(http.StatusBadRequest, map[string]string{
-			"error": "invalid request body",
+			"error": "Invalid request body",
 		})
 	}
 
-	logging.DebugEventFromEcho(c).
-		Str("menu_item_name", item.Name).
-		Str("category", item.Category).
-		Msg("menu create requested")
+	item.Category = categoryID
 
-	created, err := h.menuUseCase.Create(c.Request().Context(), &item)
+	createdItem, err := h.menuUseCase.Create(c.Request().Context(), categoryID, &item)
 	if err != nil {
-		logging.ErrorEventFromEcho(c, err).
-			Str("menu_item_name", item.Name).
-			Str("category", item.Category).
-			Msg("failed to create menu item")
-		return err
+		return c.JSON(http.StatusInternalServerError, map[string]string{
+			"error": err.Error(),
+		})
 	}
 
-	return c.JSON(http.StatusCreated, created)
-
+	return c.JSON(http.StatusCreated, createdItem)
 }
+
 func (h menuHandlerImpl) Update(c *echo.Context) error {
-	id := c.Param("id")
+	categoryID := c.Param("category")
+	itemID := c.Param("id")
 
 	var item menu.MenuItem
 	if err := c.Bind(&item); err != nil {
-		logging.WarnEventFromEcho(c).
-			Err(err).
-			Str("menu_item_id", id).
-			Msg("invalid menu item payload")
 		return c.JSON(http.StatusBadRequest, map[string]string{
-			"error": "invalid request body",
+			"error": "Invalid request body",
 		})
 	}
 
-	logging.DebugEventFromEcho(c).
-		Str("menu_item_id", id).
-		Str("menu_item_name", item.Name).
-		Msg("menu update requested")
-
-	updated, err := h.menuUseCase.Update(c.Request().Context(), id, &item)
+	updatedItem, err := h.menuUseCase.Update(c.Request().Context(), categoryID, itemID, &item)
 	if err != nil {
-		logging.ErrorEventFromEcho(c, err).
-			Str("menu_item_id", id).
-			Msg("failed to update menu item")
-		return err
+		return c.JSON(http.StatusNotFound, map[string]string{
+			"error": err.Error(),
+		})
 	}
 
-	return c.JSON(http.StatusOK, updated)
-
+	return c.JSON(http.StatusOK, updatedItem)
 }
+
 func (h menuHandlerImpl) Delete(c *echo.Context) error {
-	id := c.Param("id")
-	logging.DebugEventFromEcho(c).
-		Str("menu_item_id", id).
-		Msg("menu delete requested")
+	categoryID := c.Param("category")
+	itemID := c.Param("id")
 
-	if err := h.menuUseCase.Delete(c.Request().Context(), id); err != nil {
-		logging.ErrorEventFromEcho(c, err).
-			Str("menu_item_id", id).
-			Msg("failed to delete menu item")
-		return err
+	if err := h.menuUseCase.Delete(c.Request().Context(), categoryID, itemID); err != nil {
+		return c.JSON(http.StatusNotFound, map[string]string{
+			"error": err.Error(),
+		})
 	}
 
-	return c.NoContent(http.StatusNoContent)
-
+	return c.JSON(http.StatusNoContent, nil)
 }
+
 func (h menuHandlerImpl) UpdateOrder(c *echo.Context) error {
-	id := c.Param("id")
+	categoryID := c.Param("category")
+	itemID := c.Param("id")
 
 	var req struct {
 		Order int `json:"order"`
 	}
-
 	if err := c.Bind(&req); err != nil {
-		logging.WarnEventFromEcho(c).
-			Err(err).
-			Str("menu_item_id", id).
-			Msg("invalid menu order payload")
 		return c.JSON(http.StatusBadRequest, map[string]string{
-			"error": "invalid request body",
+			"error": "Invalid request body",
 		})
 	}
 
-	logging.DebugEventFromEcho(c).
-		Str("menu_item_id", id).
-		Int("order", req.Order).
-		Msg("menu order update requested")
-
-	updated, err := h.menuUseCase.UpdateOrder(c.Request().Context(), id, req.Order)
+	item, err := h.menuUseCase.UpdateOrder(c.Request().Context(), categoryID, itemID, req.Order)
 	if err != nil {
-		logging.ErrorEventFromEcho(c, err).
-			Str("menu_item_id", id).
-			Int("order", req.Order).
-			Msg("failed to update menu item order")
-		return err
+		return c.JSON(http.StatusNotFound, map[string]string{
+			"error": err.Error(),
+		})
 	}
 
-	return c.JSON(http.StatusOK, updated)
-
+	return c.JSON(http.StatusOK, item)
 }

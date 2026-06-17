@@ -143,6 +143,39 @@ components:
             $ref: '#/components/schemas/CakeBuilderComponent'
           description: Available decoration options
 
+    FeaturedCake:
+      type: object
+      required: [id, name, description, image]
+      properties:
+        id:
+          type: string
+          example: "ninho-nutella"
+          description: Unique featured cake identifier
+        name:
+          type: string
+          example: "Ninho com Nutella"
+          description: Featured cake name
+        description:
+          type: string
+          example: "Delicious cake with Ninho cream and Nutella"
+          description: Detailed description
+        image:
+          type: string
+          example: "/images/home/ninho-nutella.jpg"
+          description: Image path
+        order:
+          type: integer
+          example: 1
+          description: Display order on home page
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp
+
     # ==================== Order Schemas ====================
     Order:
       type: object
@@ -601,6 +634,284 @@ paths:
                 $ref: '#/components/schemas/RefreshTokenResponse'
         '401':
           description: Unauthorized - invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+
+  /admin/upload:
+    post:
+      summary: Upload Image
+      description: Upload image for menu items, cake builder components, or featured cakes
+      tags:
+        - Upload
+      operationId: uploadImage
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: type
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [menu, cakeBuilder, home]
+          description: Upload type
+        - name: category
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Category (required for menu and cakeBuilder)
+        - name: id
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Item ID
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Image file (JPEG, PNG, WebP max 5MB)
+      responses:
+        '200':
+          description: File uploaded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url:
+                    type: string
+                    example: "https://storage.googleapis.com/delicias-da-lu-images/menu/bolos/item-id.jpg?token=..."
+                  path:
+                    type: string
+                    example: "menu/bolos/item-id.jpg"
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+
+    delete:
+      summary: Delete Image
+      description: Delete image from storage
+      tags:
+        - Upload
+      operationId: deleteImage
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: path
+          in: query
+          required: true
+          schema:
+            type: string
+          description: File path to delete
+      responses:
+        '200':
+          description: File deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+
+  /home/featured-cakes:
+    get:
+      summary: Get Featured Cakes
+      description: Retrieve all featured cakes for home page
+      tags:
+        - Home
+      operationId: getFeaturedCakes
+      responses:
+        '200':
+          description: Featured cakes list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FeaturedCake'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+
+    post:
+      summary: Create Featured Cake
+      description: Add featured cake to home page (admin only)
+      tags:
+        - Home
+      operationId: createFeaturedCake
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeaturedCake'
+      responses:
+        '201':
+          description: Featured cake created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeaturedCake'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+
+  /home/featured-cakes/{id}:
+    get:
+      summary: Get Featured Cake by ID
+      description: Retrieve specific featured cake details
+      tags:
+        - Home
+      operationId: getFeaturedCakeById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Featured cake details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeaturedCake'
+        '404':
+          description: Featured cake not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+
+    put:
+      summary: Update Featured Cake
+      description: Update featured cake details (admin only)
+      tags:
+        - Home
+      operationId: updateFeaturedCake
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeaturedCake'
+      responses:
+        '200':
+          description: Featured cake updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeaturedCake'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '404':
+          description: Featured cake not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+
+    delete:
+      summary: Delete Featured Cake
+      description: Remove featured cake from home page (admin only)
+      tags:
+        - Home
+      operationId: deleteFeaturedCake
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Featured cake deleted
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '404':
+          description: Featured cake not found
           content:
             application/json:
               schema:
@@ -1446,5 +1757,9 @@ tags:
     description: Business contact information
   - name: Configuration
     description: Site configuration
+  - name: Upload
+    description: Image upload and management
+  - name: Home
+    description: Featured cakes and home page content
   - name: Error Tracking
     description: Error documentation and tracking system
